@@ -1,0 +1,312 @@
+//+------------------------------------------------------------------+
+//|                                                    BuySellStop.mq4|
+//|                                  Copyright 2023, Example, Inc.    |
+//|                                              https://example.com/ |
+//+------------------------------------------------------------------+
+
+// Входные параметры
+input double Take_BuyPrice = 1.10495;
+input double Buy_Price = 1.10495;
+input double Stop_BuyPrice = 1.10495;
+input double Stop_SellPrice = 1.10495;
+input double Sell_Price = 1.10495;
+input double Take_SellPrice = 1.10495;
+input double slippage = 2;
+input double lotsize = 0.1;
+
+// Объявляем глобальные переменные
+int MagicNumber = 003;
+
+bool sellStopOrderSent0 = false;
+bool buyStopOrderSent0 = false;
+
+bool sellStopOrderSent = false;
+bool buyStopOrderSent = false;
+
+int stopLossHits = 0; // Количество закрытий позиции по стоп-лоссу
+double StopLossDayH = 0;
+double StopLossDayL = 0;
+
+
+
+input datetime MyDate = D'2022.01.10';
+// Получение максимума и минимума конкретного дня
+datetime date = MyDate;
+double dayHigh = iHigh(_Symbol, PERIOD_D1, iBarShift(_Symbol, PERIOD_D1, date)); // получаем максимум за день
+double dayLow = iLow(_Symbol, PERIOD_D1, iBarShift(_Symbol, PERIOD_D1, date));   // получаем минимум за день
+
+
+
+
+
+//+-------------------------Макс.Мин прошлого дня-----------------------------------------+
+// Получаем время последней свечи
+datetime last_candle_time = Time[0];
+
+// Получаем время начала предыдущего дня
+datetime prev_day_start_time = iTime(_Symbol, PERIOD_D1, 1);
+
+// Получаем индекс последней свечи на дневном графике
+int last_candle_index = iBarShift(_Symbol, PERIOD_D1, last_candle_time);
+
+// Получаем индекс свечи предыдущего дня на дневном графике
+int prev_day_index = iBarShift(_Symbol, PERIOD_D1, prev_day_start_time);
+
+// Получаем максимум и минимум предыдущего дня
+double prevDayHight = iHigh(_Symbol, PERIOD_D1, prev_day_index);
+double prevDayLow = iLow(_Symbol, PERIOD_D1, prev_day_index);
+
+bool isOrderCloseAllExecuting = false; // глобальная переменная
+//+------------------------------------------------------------------+
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void OnTrade()
+{
+    for (int i = OrdersTotal() - 1; i >= 0; i--)
+    {
+        if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+        {
+            if (OrderType() == OP_BUY || OrderType() == OP_SELL)
+            {
+                if (OrderProfit() > 0)
+                {
+                    for (int j = OrdersTotal() - 1; j >= 0; j--)
+                    {
+                        if (OrderSelect(j, SELECT_BY_POS, MODE_TRADES))
+                        {
+                            if (OrderType() == OP_BUYSTOP || OrderType() == OP_SELLSTOP)
+                            {
+                                OrderDelete(OrderTicket());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+
+
+void OnTick()
+{
+
+    // Проверяем, есть ли уже открытая позиция
+    bool hasPosition = false;
+    int ordersTotal = OrdersTotal();
+    // for (int i = 0; i < OrdersTotal(); i++)
+    // {
+    //     if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+    //     {
+    //         if (OrderSymbol() == Symbol() && OrderMagicNumber() == MagicNumber)
+    //         {
+               
+    //         }
+    //     }
+    // }
+for (int i = 0; i < ordersTotal; i++) {
+   // Получаем информацию об открытом ордере
+   if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) {
+      // Проверяем, является ли ордер открытой позицией (не является ли он отложенным ордером)
+      if (OrderType() == OP_BUY || OrderType() == OP_SELL) {
+          hasPosition = true;
+                break;
+      }
+   }
+}
+
+
+
+
+
+
+
+
+//+-------------------------Запуск торгов-----------------------------------------+
+    if (!buyStopOrderSent0)
+    {
+        bool result0 = OrderSend(Symbol(), OP_BUYSTOP, lotsize, prevDayHight + 50 * Point, 3, prevDayHight + 50 * Point - 200 * Point, prevDayHight + 50 * Point + 620 * Point, "my comment", 2222); // Отправляем ордер на торговый сервер
+        buyStopOrderSent0 = true;
+    }
+    if (!sellStopOrderSent0)
+    {
+        bool result00 = OrderSend(Symbol(), OP_SELLSTOP, lotsize, prevDayLow - 50 * Point, 3, prevDayLow - 50 * Point + 200 * Point, prevDayLow - 50 * Point - 620 * Point, "my comment", 3333); // Отправляем ордер на торговый сервер
+        sellStopOrderSent0 = true;
+    }
+
+
+ if (!hasPosition)
+    {
+        if (sellStopOrderSent0 || buyStopOrderSent0)
+        {
+            sellStopOrderSent = false;
+            buyStopOrderSent = false;
+        }
+    }
+//+-------------------------Удаление противоположного ордера при активации первого-----------------------------------------+
+    for (int ii = 0; ii < OrdersTotal(); ii++)
+    {
+        if (OrderSelect(ii, SELECT_BY_POS, MODE_TRADES))
+        {
+            if (OrderType() == OP_BUY && OrderMagicNumber() == 2222)
+            {
+                // Удалить sellstop по магическому номеру 2222
+                for (int j = OrdersTotal() - 1; j >= 0; j--)
+                {
+                    if (OrderSelect(j, SELECT_BY_POS, MODE_TRADES))
+                    {
+                        if (OrderType() == OP_SELLSTOP && OrderMagicNumber() == 3333)
+                        {
+                            if (OrderDelete(OrderTicket()))
+                            {
+                                Print("Успешно удален ордер ", OrderTicket());
+                            }
+                            else
+                            {
+                                Print("Ошибка при удалении ордера ", OrderTicket());
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            else if (OrderType() == OP_SELL && OrderMagicNumber() == 3333)
+            {
+                // Удалить buystop по магическому номеру 3333
+                for (int jj = OrdersTotal() - 1; jj >= 0; jj--)
+                {
+                    if (OrderSelect(jj, SELECT_BY_POS, MODE_TRADES))
+                    {
+                        if (OrderType() == OP_BUYSTOP && OrderMagicNumber() == 2222)
+                        {
+                            if (OrderDelete(OrderTicket()))
+                            {
+                                Print("Успешно удален ордер ", OrderTicket());
+                            }
+                            else
+                            {
+                                Print("Ошибка при удалении ордера ", OrderTicket());
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    double orderOpenPrice = OrderOpenPrice();
+    double orderProfit = OrderProfit();
+    double orderStopLoss = OrderStopLoss();
+    double orderTakeProfit = OrderTakeProfit();
+
+    if (OrdersTotal() > 0)
+    {
+        if (OrderType() == OP_SELL || OrderType() == OP_BUY)
+        {
+            if (orderProfit < 0 && MathAbs(orderProfit) >= MathAbs(orderOpenPrice - orderStopLoss))
+
+            {
+                stopLossHits++;
+            }
+            else
+            {
+                stopLossHits++;
+            }
+        }
+    }
+
+    //+------------------------------Ордера дневного максимума------------------------------------+
+    // Если нет открытой позиции и была открыта позиция на покупку, выставляем отложенный ордер на продажу
+    //  if(!hasPosition && OrderType() == OP_BUY)
+    if (OrderType() == OP_BUY && OrderMagicNumber() == 2222)
+    {
+        if (!sellStopOrderSent)
+        {
+            bool result1 = OrderSend(Symbol(), OP_SELLSTOP, lotsize, prevDayHight + 50 * Point - 200 * Point, 3, prevDayHight + 50 * Point, prevDayHight + 50 * Point - 200 * Point - 620 * Point - StopLossDayH * Point, "my comment", 1111); // Отправляем ордер на торговый сервер
+            sellStopOrderSent = true;
+        }
+    }
+    if (OrderType() == OP_SELL && OrderMagicNumber() == 1111)
+    {
+        if (!buyStopOrderSent)
+        {
+            bool result = OrderSend(Symbol(), OP_BUYSTOP, lotsize, prevDayHight + 50 * Point, 3, prevDayHight + 50 * Point - 200 * Point, prevDayHight + 50 * Point + 620 * Point + StopLossDayH * Point, "my comment", 2222); // Отправляем ордер на торговый сервер
+            buyStopOrderSent = true;
+        }
+    }
+
+    //+------------------------------Ордера дневного минимума------------------------------------+
+    // Если нет открытой позиции и была открыта позиция на покупку, выставляем отложенный ордер на продажу
+    //  if(!hasPosition && OrderType() == OP_BUY)
+    if (OrderType() == OP_BUY && OrderMagicNumber() == 4444)
+    {
+        if (!sellStopOrderSent)
+        {
+            bool result2 = OrderSend(Symbol(), OP_SELLSTOP, lotsize, prevDayLow - 50 * Point, 3, prevDayLow - 50 * Point + 200 * Point, prevDayLow - 50 * Point - 620 * Point - StopLossDayH * Point, "my comment", 3333); // Отправляем ордер на торговый сервер
+            sellStopOrderSent = true;
+        }
+    }
+    if (OrderType() == OP_SELL && OrderMagicNumber() == 3333)
+    {
+        if (!buyStopOrderSent)
+        {
+            bool result3 = OrderSend(Symbol(), OP_BUYSTOP, lotsize, prevDayLow - 50 * Point + 200 * Point, 3, prevDayLow - 50 * Point, prevDayLow - 50 * Point + 200 * Point + 620 * Point + StopLossDayH * Point, "my comment", 4444); // Отправляем ордер на торговый сервер
+            buyStopOrderSent = true;
+        }
+    }
+//+------------------------------Действия при стоплосах------------------------------------+
+    if (stopLossHits >= 3)
+    {
+        StopLossDayH = +200;
+    }
+    if (stopLossHits >= 4)
+    {
+        StopLossDayH = +400;
+    }
+    if (stopLossHits >= 5)
+    {
+        StopLossDayH = +600;
+    }
+    if (stopLossHits >= 6)
+    {
+        StopLossDayH = +650;
+    }
+    if (stopLossHits >= 7)
+    {
+        StopLossDayH = +700;
+    }
+
+    //+------------------------------------------------------------------+
+    if (!hasPosition)
+    {
+        if (sellStopOrderSent || buyStopOrderSent)
+        {
+            sellStopOrderSent = false;
+            buyStopOrderSent = false;
+        }
+    }
+
+    Comment("Stop loss hits: ", stopLossHits, " StopLossDayH: ", StopLossDayH);
+}
+
+
+
+    // Выводим значение переменной на график
+    //  Comment("Magic number: " + stopLossHits);
+
+
+  // Получить магический номер текущей позиции. Делал для вывода в комент
+            //   if (OrderType() == OP_BUY || OrderType() == OP_SELL) { // проверяем тип открытой позиции
+            //     int magicNumber = OrderMagicNumber(); // получаем магический номер открытой позиции
+            //     Print("Magic number of first open BUY position: ", magicNumber);
+            //     break; // выходим из цикла после получения магического номера первой найденной позиции
+            // }

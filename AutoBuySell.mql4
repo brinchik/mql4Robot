@@ -1,0 +1,81 @@
+//+------------------------------------------------------------------+
+//|                                                    BuySellStop.mq4|
+//|                                  Copyright 2023, Example, Inc.    |
+//|                                              https://example.com/ |
+//+------------------------------------------------------------------+
+
+// Входные параметры
+input double Take_BuyPrice = 1.10495;
+input double Buy_Price = 1.10495;
+input double Stop_BuyPrice = 1.10495;
+
+input double Stop_SellPrice = 1.10495;
+input double Sell_Price = 1.10495;
+input double Take_SellPrice = 1.10495;
+
+input double lotsize = 0.1;
+
+// Объявляем глобальные переменные
+int MagicNumber = 003;
+bool sellStopOrderSent = false;
+bool buyStopOrderSent = false;
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void OnTick()
+  {
+// Проверяем, есть ли уже открытая позиция
+   bool hasPosition = false;
+   for(int i = 0; i < OrdersTotal(); i++)
+     {
+      if(OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+        {
+         if(OrderSymbol() == Symbol() && OrderMagicNumber() == MagicNumber)
+           {
+            hasPosition = true;
+            break;
+           }
+        }
+     }
+
+// Если нет открытой позиции и была открыта позиция на покупку, выставляем отложенный ордер на продажу
+  //  if(!hasPosition && OrderType() == OP_BUY)
+   if(OrderType() == OP_BUY)
+     {
+
+      if(!sellStopOrderSent)
+        {
+         bool result1 = OrderSend(Symbol(), OP_SELLSTOP, lotsize, Sell_Price, 3, Stop_SellPrice, Take_SellPrice, 0, MagicNumber, Green); // Отправляем ордер на торговый сервер
+         sellStopOrderSent = true;
+        }
+
+     }
+   if(OrderType() == OP_SELL)
+     {
+
+      if(!buyStopOrderSent)
+        {
+         bool result = OrderSend(Symbol(), OP_BUYSTOP, lotsize, Buy_Price, 3, Stop_BuyPrice, Take_BuyPrice, 0, MagicNumber, Red); // Отправляем ордер на торговый сервер
+         buyStopOrderSent = true;
+        }
+
+     }
+
+   if(!hasPosition)
+     {
+
+      if(sellStopOrderSent || buyStopOrderSent)
+        {
+
+         sellStopOrderSent = false;
+         buyStopOrderSent = false;
+        }
+
+     }
+  }
+
+
+
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
