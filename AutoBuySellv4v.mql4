@@ -5,12 +5,12 @@
 //+------------------------------------------------------------------+
 
 // Входные параметры
-input double Take_BuyPrice = 1.10495;
-input double Buy_Price = 1.10495;
-input double Stop_BuyPrice = 1.10495;
-input double Stop_SellPrice = 1.10495;
-input double Sell_Price = 1.10495;
-input double Take_SellPrice = 1.10495;
+// input double Take_BuyPrice = 1.10495;
+// input double Buy_Price = 1.10495;
+// input double Stop_BuyPrice = 1.10495;
+// input double Stop_SellPrice = 1.10495;
+// input double Sell_Price = 1.10495;
+// input double Take_SellPrice = 1.10495;
 input double slippage = 2;
 input double lotsize = 0.1;
 
