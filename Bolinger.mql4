@@ -1,0 +1,47 @@
+//+------------------------------------------------------------------+
+//|                                                    BuySellStop.mq4|
+//|                                  Copyright 2023, Example, Inc.    |
+//|                                              https://example.com/ |
+//+------------------------------------------------------------------+
+int MagicNumber = 0;
+
+void BollingerFunc()
+{
+    double bol_upper, bol_middle, bol_lower;
+    int bol__period = 200;     // период скользящей средней
+    int bol_dev = 2;          // количество стандартных отклонений для полос Боллинджера
+    int bol_shift = 0;           // сдвиг назад на несколько баров
+    double price = Close[0]; // текущая цена закрытия
+
+    static int above_upper_count = 0;
+    static int below_lower_count = 0;
+
+    // Получаем значения верхней, средней и нижней полос Боллинджера
+    bol_upper = iBands(Symbol(), PERIOD_CURRENT, bol__period, bol_dev, 0, PRICE_CLOSE, MODE_UPPER, bol_shift);
+    bol_middle = iBands(Symbol(), PERIOD_CURRENT, bol__period, bol_dev, 0, PRICE_CLOSE, MODE_MAIN, bol_shift);
+    bol_lower = iBands(Symbol(), PERIOD_CURRENT, bol__period, bol_dev, 0, PRICE_CLOSE, MODE_LOWER, bol_shift);
+
+    // Проверяем, поднялась ли цена выше верхней полосы Боллинджера на 5 пунктов
+    if (price > bol_upper + 50 * Point)
+    {
+        if (OrdersTotal() == 0)
+        {
+            // Открываем покупку с указанным stop loss и take profit
+            OrderSend(Symbol(), OP_SELL, 0.1, Bid, 3, Bid + 500 * Point, Bid - 200 * Point, "Bollinger Bands Strategy", MagicNumber);
+        }
+    }
+    // Проверяем, опустилась ли цена ниже нижней полосы Боллинджера на 5 пунктов
+    else if (price < bol_lower - 50 * Point)
+    {
+        if (OrdersTotal() == 0)
+        {
+            // Открываем продажу с указанным stop loss и take profit
+            OrderSend(Symbol(), OP_BUY, 0.1, Ask, 3, Ask - 500 * Point, Ask + 200 * Point, "Bollinger Bands Strategy", MagicNumber);
+        }
+    }
+}
+
+void OnTick()
+{
+    BollingerFunc();
+}
