@@ -228,7 +228,7 @@ void OnTick()
 
 
 
- double ema90 = iMA(_Symbol, PERIOD_CURRENT, 150, 0, MODE_EMA, PRICE_CLOSE, 0);
+ double ema90 = iMA(_Symbol, PERIOD_CURRENT, 90, 0, MODE_EMA, PRICE_CLOSE, 0);
 double closePrice = Close[0];
 
 if (closePrice < ema90) {
