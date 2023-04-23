@@ -1,0 +1,124 @@
+//+------------------------------------------------------------------+
+//|                                                      ProjectName |
+//|                                      Copyright 2018, CompanyName |
+//|                                       http://www.companyname.net |
+//+------------------------------------------------------------------+
+bool sellStopOrderSent = false;
+bool hasPosition = false;
+void OnTick()
+  {
+
+
+
+   datetime currentTime = TimeCurrent();
+  
+      // Получаем цены текущей свечи
+      double currentOpen = iOpen(_Symbol, PERIOD_M5, 0);
+      double currentClose = iClose(_Symbol, PERIOD_M5, 0);
+      double currentHigh = iHigh(_Symbol, PERIOD_M5, 0);
+      double currentLow = iLow(_Symbol, PERIOD_M5, 0);
+
+      // Получаем цены предыдущей свечи
+      double previousOpen = iOpen(_Symbol, PERIOD_M5, 1);
+      double previousClose = iClose(_Symbol, PERIOD_M5, 1);
+      double previousHigh = iHigh(_Symbol, PERIOD_M5, 1);
+      double previousLow = iLow(_Symbol, PERIOD_M5, 1);
+
+      // Проверяем, что текущая свеча была бычьей свечой
+      bool isBullish = currentClose > currentOpen;
+
+      // Проверяем, что предыдущая свеча была медвежьей свечой
+      bool isBearish = previousClose < previousOpen;
+
+      // Проверяем, что цена открытия текущей свечи ниже цены закрытия предыдущей свечи
+      bool isLowerOpen = currentOpen < previousClose;
+
+      // Проверяем, что цена закрытия текущей свечи выше цены открытия предыдущей свечи
+      bool isHigherClose = currentClose > previousOpen;
+
+      // Проверяем, что текущая свеча поглотила предыдущую свечу
+      bool isEngulfing = isBullish && isBearish && isLowerOpen && isHigherClose;
+
+
+
+
+
+
+    
+ // Проверяем, есть ли уже открытая позиция
+    int ordersTotal = OrdersTotal();
+    for (int i = 0; i < ordersTotal; i++)
+    {
+        // Получаем информацию об открытом ордере
+        if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+        {
+            // Проверяем, является ли ордер открытой позицией (не является ли он отложенным ордером)
+            if (OrderType() == OP_BUY || OrderType() == OP_SELL)
+            {
+                hasPosition = true;
+                break;
+            }
+            else
+            {
+                hasPosition = false;
+            }
+        }
+    }
+
+
+
+
+
+
+
+if (TimeHour(currentTime) > 09 && TimeMinute(currentTime) > 01 && TimeHour(currentTime) < 18 && TimeMinute(currentTime) < 59){
+      if(isEngulfing && !sellStopOrderSent)
+        {
+         // Делаем что-то, например, отправляем сообщение на почту
+         bool result1 = OrderSend(Symbol(), OP_BUY, 0.1, Ask, 3, 0, Ask + 60 * Point, "my comment", 1111); // Отправляем ордер на торговый сервер
+         sellStopOrderSent = true;
+        }
+  }
+
+if (TimeHour(currentTime) == 23 && TimeMinute(currentTime) == 55)
+    {
+double current_priceB = MarketInfo(Symbol(), MODE_BID);
+double current_priceA = MarketInfo(Symbol(), MODE_ASK);
+    for(int ci = OrdersTotal() - 1; ci >= 0; ci--)
+    {
+        if(OrderSelect(ci, SELECT_BY_POS, MODE_TRADES))
+        {
+            if(OrderSymbol() == _Symbol) // Убедитесь, что это сделка для текущего символа
+            {
+                if(OrderType() == OP_BUY || OrderType() == OP_SELL)
+                {
+                    bool closedA = OrderClose(OrderTicket(), OrderLots(), current_priceA, 10, clrRed);
+                    bool closedB = OrderClose(OrderTicket(), OrderLots(), current_priceB, 10, clrRed);
+                   
+                    if(closedA || closedB)
+                    {
+                        Print("Trade closed successfully!");
+                    }
+                    else
+                    {
+                        Print("Failed to close trade! Error code: ", GetLastError());
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+if (OrdersTotal() == 0)
+    {
+    sellStopOrderSent = false;
+ }
+
+
+   if(TimeHour(currentTime) == 23 && TimeMinute(currentTime) == 55)
+     {
+      sellStopOrderSent = false;
+     }
+  }
+//+------------------------------------------------------------------+
