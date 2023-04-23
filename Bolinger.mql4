@@ -5,43 +5,286 @@
 //+------------------------------------------------------------------+
 int MagicNumber = 0;
 
+bool sellStopSent = false;
+bool buyStopSent = false;
+
+double bol_upper, bol_middle, bol_lower;
+double price = 0; // текущая цена закрытия
+
+datetime prevTime = 0;
+
+datetime last_candle_time;
+datetime prev_day_start_time;
+
+int last_candle_index;
+int prev_day_index;
+int prev_day_of_week;
+
+double prevDayHight;
+double prevDayLow;
+
+
 void BollingerFunc()
 {
-    double bol_upper, bol_middle, bol_lower;
-    int bol__period = 200;     // период скользящей средней
-    int bol_dev = 2;          // количество стандартных отклонений для полос Боллинджера
-    int bol_shift = 0;           // сдвиг назад на несколько баров
-    double price = Close[0]; // текущая цена закрытия
+    
+}
 
-    static int above_upper_count = 0;
-    static int below_lower_count = 0;
 
-    // Получаем значения верхней, средней и нижней полос Боллинджера
+
+
+void OnTick()
+{
+
+
+
+
+
+
+ // Получаем текущее время
+    datetime currentTime = TimeCurrent();
+
+    // Получаем время последней свечи
+    last_candle_time = Time[0];
+
+    // Получаем время начала предыдущего торгового дня
+    prev_day_start_time = iTime(_Symbol, PERIOD_D1, 1);
+    prev_day_of_week = TimeDayOfWeek(prev_day_start_time);
+    while (prev_day_of_week == 0 || prev_day_of_week == 6)
+    {
+        // Если предыдущий день выходной, уменьшаем дату на один день
+        prev_day_start_time -= PeriodSeconds(PERIOD_D1);
+        prev_day_of_week = TimeDayOfWeek(prev_day_start_time);
+    }
+
+    // Если текущее время равно 23:55, обновляем переменные prevDayHight и prevDayLow
+   
+    if (TimeHour(currentTime) == 00 && TimeMinute(currentTime) == 15)
+    {
+        // Получаем индекс последней свечи на дневном графике
+        last_candle_index = iBarShift(_Symbol, PERIOD_D1, last_candle_time);
+
+        // Получаем индекс свечи предыдущего дня на дневном графике
+        prev_day_index = iBarShift(_Symbol, PERIOD_D1, prev_day_start_time);
+
+        // Получаем максимум и минимум предыдущего дня
+        prevDayHight = iHigh(_Symbol, PERIOD_D1, prev_day_index);
+        prevDayLow = iLow(_Symbol, PERIOD_D1, prev_day_index);
+
+        sellStopSent = false;
+        buyStopSent = false;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    price = Close[0]; //? Конечная цена закрытия свечи
+    int ticket;
+    double prevBarOpen[12]; //? Этот массив хранит значения цены открытия предыдущих 12 баров.
+    double prevBarClose[12]; //? Этот массив хранит значения цены открытия предыдущих 12 баров.
+
+    for (int i = 0; i < 12; i++)
+    {
+        prevBarOpen[i] = iOpen(_Symbol, PERIOD_CURRENT, i + 1);
+        prevBarClose[i] = iClose(_Symbol, PERIOD_CURRENT, i + 1);
+    }
+
+    
+    int bol__period = 200;
+    int bol_dev = 2;
+    int bol_shift = 0;
     bol_upper = iBands(Symbol(), PERIOD_CURRENT, bol__period, bol_dev, 0, PRICE_CLOSE, MODE_UPPER, bol_shift);
     bol_middle = iBands(Symbol(), PERIOD_CURRENT, bol__period, bol_dev, 0, PRICE_CLOSE, MODE_MAIN, bol_shift);
     bol_lower = iBands(Symbol(), PERIOD_CURRENT, bol__period, bol_dev, 0, PRICE_CLOSE, MODE_LOWER, bol_shift);
 
-    // Проверяем, поднялась ли цена выше верхней полосы Боллинджера на 5 пунктов
+
+    datetime curTime = Time[0];
+    if (prevTime != curTime)
+    {
+        bool above_upper = true;
+        bool below_lower = true;
+        for (int bi = 0; bi < 1; bi++)
+        {
+            if (prevBarClose[bi] <= bol_upper)
+            {
+                above_upper = false;
+            }
+            if (prevBarClose[bi] >= bol_lower)
+            {
+                below_lower = false;
+            }
+        }
+    }
+    if (above_upper || below_lower)
+    {
+        prevTime = curTime;
+       // Проверяем, поднялась ли цена выше верхней полосы Боллинджера на 5 пунктов
+
+       datetime currentTimeStartTrade = TimeLocal();
+
+
+    if (TimeHour(currentTimeStartTrade) > 0 && TimeMinute(currentTimeStartTrade) > 30 && TimeHour(currentTimeStartTrade) < 23 && TimeMinute(currentTimeStartTrade) < 59)
+    {
     if (price > bol_upper + 50 * Point)
     {
-        if (OrdersTotal() == 0)
+        if (!sellStopSent && OrdersTotal() == 0)
         {
             // Открываем покупку с указанным stop loss и take profit
-            OrderSend(Symbol(), OP_SELL, 0.1, Bid, 3, Bid + 500 * Point, Bid - 200 * Point, "Bollinger Bands Strategy", MagicNumber);
+            OrderSend(Symbol(), OP_SELL, 0.1, Bid, 3, 0, 0, "Bollinger Bands Strategy", MagicNumber);
+            sellStopSent = true;
+        }
+        if (!sellStopSent && OrdersTotal() == 1)
+        {
+            // Открываем покупку с указанным stop loss и take profit
+            OrderSend(Symbol(), OP_SELL, 0.2, Bid, 3, 0, 0, "Bollinger Bands Strategy", MagicNumber);
+            sellStopSent = true;
         }
     }
     // Проверяем, опустилась ли цена ниже нижней полосы Боллинджера на 5 пунктов
     else if (price < bol_lower - 50 * Point)
     {
-        if (OrdersTotal() == 0)
+        if (!buyStopSent && OrdersTotal() == 0)
         {
             // Открываем продажу с указанным stop loss и take profit
-            OrderSend(Symbol(), OP_BUY, 0.1, Ask, 3, Ask - 500 * Point, Ask + 200 * Point, "Bollinger Bands Strategy", MagicNumber);
+            OrderSend(Symbol(), OP_BUY, 0.1, Ask, 3, 0, 0, "Bollinger Bands Strategy", MagicNumber);
+            buyStopSent = true;
+        }
+        if (!buyStopSent && OrdersTotal() == 1)
+        {
+            // Открываем продажу с указанным stop loss и take profit
+            OrderSend(Symbol(), OP_BUY, 0.2, Ask, 3, 0, 0, "Bollinger Bands Strategy", MagicNumber);
+            buyStopSent = true;
         }
     }
+    }
+
+    // Проверяем 12-й бар
+    // if (prevBarClose[11] > bol_upper)
+    // {
+    //     for (int ci = OrdersTotal() - 1; ci >= 0; ci--)
+    //     {
+    //         if (OrderSelect(ci, SELECT_BY_POS, MODE_TRADES))
+    //         {
+    //             if (OrderSymbol() == _Symbol) // Убедитесь, что это сделка для текущего символа
+    //             {
+    //                 if (OrderType() == OP_SELL)
+    //                 {
+    //                     ticket = OrderTicket();
+    //                     double current_price = MarketInfo(Symbol(), MODE_ASK);
+    //                     bool closed = OrderClose(OrderTicket(), OrderLots(), current_price, 10, clrRed);
+    //                     if (closed)
+    //                     {
+    //                         Print("Trade closed successfully!");
+    //                     }
+    //                     else
+    //                     {
+    //                         Print("Failed to close trade! Error code: ", GetLastError());
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+    
+    // if (prevBarClose[4] < bol_lower - 100 * Point)
+    // {
+    //     for (int ci2 = OrdersTotal() - 1; ci2 >= 0; ci2--)
+    //     {
+    //         if (OrderSelect(ci2, SELECT_BY_POS, MODE_TRADES))
+    //         {
+    //             if (OrderSymbol() == _Symbol) // Убедитесь, что это сделка для текущего символа
+    //             {
+    //                 if (OrderType() == OP_BUY)
+    //                 {
+    //                     ticket = OrderTicket();
+    //                     double current_price2 = MarketInfo(Symbol(), MODE_BID);
+    //                     bool closed2 = OrderClose(OrderTicket(), OrderLots(), current_price2, 10, clrRed);
+    //                     if (closed2)
+    //                     {
+    //                         Print("Trade closed successfully! fak");
+    //                     }
+    //                     else
+    //                     {
+    //                         Print("Failed to close trade! Error code: ", GetLastError());
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
+
+
+ }
+
+
+
+
+ double ema90 = iMA(_Symbol, PERIOD_CURRENT, 150, 0, MODE_EMA, PRICE_CLOSE, 0);
+double closePrice = Close[0];
+
+if (closePrice < ema90) {
+    // закрыть все продажи
+    for (int ci = OrdersTotal() - 1; ci >= 0; ci--)
+        {
+            if (OrderSelect(ci, SELECT_BY_POS, MODE_TRADES))
+            {
+                if (OrderSymbol() == _Symbol) // Убедитесь, что это сделка для текущего символа
+                {
+                    if (OrderType() == OP_SELL)
+                    {
+                        ticket = OrderTicket();
+                        double current_price = MarketInfo(Symbol(), MODE_ASK);
+                        bool closed = OrderClose(OrderTicket(), OrderLots(), current_price, 10, clrRed);
+                        if (closed)
+                        {
+                            Print("Trade closed successfully!");
+                        }
+                        else
+                        {
+                            Print("Failed to close trade! Error code: ", GetLastError());
+                        }
+                    }
+                }
+            }
+        }
+} else if (closePrice > ema90) {
+    // закрыть все покупки
+    for (int ci2 = OrdersTotal() - 1; ci2 >= 0; ci2--)
+        {
+            if (OrderSelect(ci2, SELECT_BY_POS, MODE_TRADES))
+            {
+                if (OrderSymbol() == _Symbol) // Убедитесь, что это сделка для текущего символа
+                {
+                    if (OrderType() == OP_BUY)
+                    {
+                        ticket = OrderTicket();
+                        double current_price2 = MarketInfo(Symbol(), MODE_BID);
+                        bool closed2 = OrderClose(OrderTicket(), OrderLots(), current_price2, 10, clrRed);
+                        if (closed2)
+                        {
+                            Print("Trade closed successfully! fak");
+                        }
+                        else
+                        {
+                            Print("Failed to close trade! Error code: ", GetLastError());
+                        }
+                    }
+                }
+            }
+        }
 }
 
-void OnTick()
-{
-    BollingerFunc();
+
+
+    Comment("sellStopSent: ", sellStopSent, " buyStopSent: ", buyStopSent);
+
 }
