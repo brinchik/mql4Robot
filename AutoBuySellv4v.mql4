@@ -103,9 +103,10 @@ void OnTick()
 
 
 int ticket;
-if (TimeHour(currentTime) == 22 && TimeMinute(currentTime) == 55 && hasPosition)
+if (TimeHour(currentTime) == 23 && TimeMinute(currentTime) == 55 && hasPosition)
     {
-double current_price = MarketInfo(Symbol(), MODE_ASK);
+double current_priceB = MarketInfo(Symbol(), MODE_BID);
+double current_priceA = MarketInfo(Symbol(), MODE_ASK);
     for(int ci = OrdersTotal() - 1; ci >= 0; ci--)
     {
         if(OrderSelect(ci, SELECT_BY_POS, MODE_TRADES))
@@ -114,8 +115,10 @@ double current_price = MarketInfo(Symbol(), MODE_ASK);
             {
                 if(OrderType() == OP_BUY || OrderType() == OP_SELL)
                 {
-                    bool closed = OrderClose(OrderTicket(), OrderLots(), current_price, 10, clrRed);
-                    if(closed)
+                    bool closedA = OrderClose(OrderTicket(), OrderLots(), current_priceA, 10, clrRed);
+                    bool closedB = OrderClose(OrderTicket(), OrderLots(), current_priceB, 10, clrRed);
+                     stopLossHits = 0;
+                    if(closedA || closedB)
                     {
                         Print("Trade closed successfully!");
                     }
@@ -202,12 +205,12 @@ prevDayOpen = iOpen(_Symbol, PERIOD_D1, 1);
         //+-------------------------Запуск торгов-----------------------------------------+
         if (prevDayClose > prevDayOpen && !buyStopOrderSent0)
         {
-            bool result0 = OrderSend(Symbol(), OP_BUYSTOP, lotsize, prevDayHight + 50 * Point, 3, prevDayHight + 50 * Point - 200 * Point, prevDayHight + 50 * Point + 220 * Point, "my comment", 2222); // Отправляем ордер на торговый сервер 
+            bool result0 = OrderSend(Symbol(), OP_BUYSTOP, lotsize, prevDayHight + 50 * Point, 3, prevDayHight + 50 * Point - 200 * Point, prevDayHight + 50 * Point + 120 * Point, "my comment", 2222); // Отправляем ордер на торговый сервер 
             buyStopOrderSent0 = true;
         }
         if (prevDayClose < prevDayOpen && !sellStopOrderSent0)
         {
-            bool result00 = OrderSend(Symbol(), OP_SELLSTOP, lotsize, prevDayLow - 50 * Point, 3, prevDayLow - 50 * Point + 200 * Point, prevDayLow - 50 * Point - 220 * Point, "my comment", 3333); // Отправляем ордер на торговый сервер
+            bool result00 = OrderSend(Symbol(), OP_SELLSTOP, lotsize, prevDayLow - 50 * Point, 3, prevDayLow - 50 * Point + 200 * Point, prevDayLow - 50 * Point - 120 * Point, "my comment", 3333); // Отправляем ордер на торговый сервер
             sellStopOrderSent0 = true;
         }
     }
@@ -285,6 +288,11 @@ prevDayOpen = iOpen(_Symbol, PERIOD_D1, 1);
         }
     }
    //+------------------------------Действия при стоплосах------------------------------------+
+   if (stopLossHits >= 1)
+    {
+        // StopLossDayH = +200;
+        lotss = +0.1;
+    }
    if (stopLossHits >= 2)
     {
         // StopLossDayH = +200;
@@ -325,7 +333,7 @@ prevDayOpen = iOpen(_Symbol, PERIOD_D1, 1);
     {
         if (!sellStopOrderSent)
         {
-            bool result1 = OrderSend(Symbol(), OP_SELLSTOP, lotsize + lotss, prevDayHight + 50 * Point - 200 * Point, 3, prevDayHight + 50 * Point, prevDayHight + 50 * Point - 200 * Point - 220 * Point - StopLossDayH * Point, "my comment", 1111); // Отправляем ордер на торговый сервер
+            bool result1 = OrderSend(Symbol(), OP_SELLSTOP, lotsize + lotss, prevDayHight + 50 * Point - 200 * Point, 3, prevDayHight + 50 * Point, prevDayHight + 50 * Point - 200 * Point - 120 * Point - StopLossDayH * Point, "my comment", 1111); // Отправляем ордер на торговый сервер
             sellStopOrderSent = true;
         }
     }
@@ -333,7 +341,7 @@ prevDayOpen = iOpen(_Symbol, PERIOD_D1, 1);
     {
         if (!buyStopOrderSent)
         {
-            bool result = OrderSend(Symbol(), OP_BUYSTOP, lotsize + lotss, prevDayHight + 50 * Point, 3, prevDayHight + 50 * Point - 200 * Point, prevDayHight + 50 * Point + 220 * Point + StopLossDayH * Point, "my comment", 2222); // Отправляем ордер на торговый сервер
+            bool result = OrderSend(Symbol(), OP_BUYSTOP, lotsize + lotss, prevDayHight + 50 * Point, 3, prevDayHight + 50 * Point - 200 * Point, prevDayHight + 50 * Point + 120 * Point + StopLossDayH * Point, "my comment", 2222); // Отправляем ордер на торговый сервер
             buyStopOrderSent = true;
         }
     }
@@ -345,7 +353,7 @@ prevDayOpen = iOpen(_Symbol, PERIOD_D1, 1);
     {
         if (!sellStopOrderSent)
         {
-            bool result2 = OrderSend(Symbol(), OP_SELLSTOP, lotsize + lotss, prevDayLow - 50 * Point, 3, prevDayLow - 50 * Point + 200 * Point, prevDayLow - 50 * Point - 220 * Point - StopLossDayH * Point, "my comment", 3333); // Отправляем ордер на торговый сервер
+            bool result2 = OrderSend(Symbol(), OP_SELLSTOP, lotsize + lotss, prevDayLow - 50 * Point, 3, prevDayLow - 50 * Point + 200 * Point, prevDayLow - 50 * Point - 120 * Point - StopLossDayH * Point, "my comment", 3333); // Отправляем ордер на торговый сервер
             sellStopOrderSent = true;
         }
     }
@@ -353,7 +361,7 @@ prevDayOpen = iOpen(_Symbol, PERIOD_D1, 1);
     {
         if (!buyStopOrderSent)
         {
-            bool result3 = OrderSend(Symbol(), OP_BUYSTOP, lotsize + lotss, prevDayLow - 50 * Point + 200 * Point, 3, prevDayLow - 50 * Point, prevDayLow - 50 * Point + 200 * Point + 220 * Point + StopLossDayH * Point, "my comment", 4444); // Отправляем ордер на торговый сервер
+            bool result3 = OrderSend(Symbol(), OP_BUYSTOP, lotsize + lotss, prevDayLow - 50 * Point + 200 * Point, 3, prevDayLow - 50 * Point, prevDayLow - 50 * Point + 200 * Point + 120 * Point + StopLossDayH * Point, "my comment", 4444); // Отправляем ордер на торговый сервер
             buyStopOrderSent = true;
         }
     }
