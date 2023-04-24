@@ -32,8 +32,8 @@ int init() {
 
 void OnTick() {
 
-    bool longCondition = (EMA5 > EMA90) && (EMA5 - EMA90 > 0.0002) && ((EMA5 - iClose(NULL, 0, 5)) < 0.0005);
-    bool shortCondition = (EMA5 < EMA90) && (EMA90 - EMA5 > 0.0002) && ((iClose(NULL, 0, 5) - EMA5) < 0.0005);
+    bool longCondition = (EMA5 > EMA90) && (EMA5 - EMA90 > 0.0008);
+    bool shortCondition = (EMA5 < EMA90) && (EMA90 - EMA5 > 0.0008);
 
 
     // получаем текущие значения EMA5 и EMA90
@@ -45,14 +45,16 @@ void OnTick() {
     if(longCondition) {
         // покупаем, если EMA5 пересекла EMA90 сверху вниз
         if (OrdersTotal() == 0 && !buyStopOrderSent0) {
-            OrderSend(_Symbol, OP_BUY, 0.1, Ask, 3, Bid-200*Point, Ask+150*Point, "EMA cross", 123, 0, Green);
+            OrderSend(_Symbol, OP_BUY, 0.1, Ask, 3, 0, 0, "EMA cross", 123, 0, Green);
              buyStopOrderSent0 = true;
+             sellStopOrderSent0 = false;
         }
     } else if(shortCondition && !sellStopOrderSent0) {
         // продаем, если EMA5 пересекла EMA90 снизу вверх
         if (OrdersTotal() == 0) {
-            OrderSend(_Symbol, OP_SELL, 0.1, Bid, 3, Ask+200*Point, Bid-150*Point, "EMA cross", 1234, 0, Red);
+            OrderSend(_Symbol, OP_SELL, 0.1, Bid, 3, 0, 0, "EMA cross", 1234, 0, Red);
              sellStopOrderSent0 = true;
+             buyStopOrderSent0 = false;
         }
     }
 
@@ -63,12 +65,35 @@ void OnTick() {
 if (OrdersTotal() > 0) {
     for (int i = OrdersTotal() - 1; i >= 0; i--) {
         OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-        if (OrderSymbol() == _Symbol && OrderMagicNumber() == MagicNumber) {
+        if (OrderSymbol() == _Symbol) {
+            if ((OrderType() == OP_BUY && EMA5 < EMA90) || (OrderType() == OP_SELL && EMA5 > EMA90)) {
+                OrderClose(OrderTicket(), OrderLots(), Ask, slippage, clrRed);
+            }
+        }
+    }
+}
+if (OrdersTotal() > 0) {
+    for (int ii = OrdersTotal() - 1; ii >= 0; ii--) {
+        OrderSelect(ii, SELECT_BY_POS, MODE_TRADES);
+        if (OrderSymbol() == _Symbol) {
             if ((OrderType() == OP_BUY && EMA5 < EMA90) || (OrderType() == OP_SELL && EMA5 > EMA90)) {
                 OrderClose(OrderTicket(), OrderLots(), Bid, slippage, clrRed);
             }
         }
     }
 }
+
+
+// if (OrdersTotal() == 0)
+//     {
+//     buyStopOrderSent0 = false;
+//     sellStopOrderSent0 = false;
+//  }
+
+
+
+
+
+
 
 }

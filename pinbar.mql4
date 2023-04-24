@@ -1,0 +1,93 @@
+//+------------------------------------------------------------------+
+//|                                                      ProjectName |
+//|                                      Copyright 2018, CompanyName |
+//|                                       http://www.companyname.net |
+//+------------------------------------------------------------------+
+datetime lastBarTime;
+bool sellStopOrderSent = false;
+void OnTick()
+  {
+
+double ema5 = iMA(_Symbol, PERIOD_CURRENT, 5, 0, MODE_EMA, PRICE_CLOSE, 0);
+double ema90 = iMA(_Symbol, PERIOD_CURRENT, 90, 0, MODE_EMA, PRICE_CLOSE, 0);
+double currentPrice = Bid;
+
+// Получаем время последнего бара
+   datetime currentBarTime = iTime(_Symbol, PERIOD_CURRENT, 0);
+
+
+
+// Получаем цены текущей свечи
+   double currentOpen = iOpen(_Symbol, PERIOD_CURRENT, 0);
+   double currentClose = iClose(_Symbol, PERIOD_CURRENT, 0);
+   double currentHigh = iHigh(_Symbol, PERIOD_CURRENT, 0);
+   double currentLow = iLow(_Symbol, PERIOD_CURRENT, 0);
+
+// Вычисляем размер бара
+   double barSize = MathAbs(currentHigh - currentLow);
+
+
+
+
+
+// Ваш код здесь
+
+
+
+
+
+
+
+
+// Проверяем, что размер бара не равен нулю
+   if(barSize != 0)
+     {
+
+
+      // Вычисляем размер фетиля
+      double wickSize = MathAbs(currentHigh - currentClose);
+      if(wickSize < MathAbs(currentLow - currentClose))
+        {
+         wickSize = MathAbs(currentLow - currentClose);
+        }
+     
+            // Проверяем, что размер фетиля составляет не менее 80% от размера свечи
+            if(wickSize / barSize >= 0.8)
+              {
+               // Проверяем, что размер бара составляет не менее 10 пунктов
+               if(barSize >= 50 * _Point)
+                 {
+                  // Проверяем направление фетиля
+                  if(currentHigh - currentClose >= currentClose - currentLow)
+                    {
+                         // Проверяем, изменилось ли время последнего бара
+      if(currentBarTime != lastBarTime)
+        {
+         // Сохраняем время последнего бара
+         lastBarTime = currentBarTime;
+
+         // Получаем цены закрытия последнего бара
+         double lastClose = iClose(_Symbol, PERIOD_CURRENT, 1);
+
+         // Выполняем необходимые действия
+         if(lastClose > 0 && ema5 < ema90 && MathAbs(ema5 - ema90) > 150 * Point)
+           {
+                     // Открываем продажу
+                     OrderSend(_Symbol, OP_SELL, 0.1, Bid, 5, Bid + 500 * Point, Bid - 100 * Point, "Pinbar Sell", 333);
+                    }
+                  else if(ema5 > ema90 && MathAbs(ema5 - ema90) < 150 * Point)
+                    {
+                     // Открываем покупку
+                     OrderSend(_Symbol, OP_BUY, 0.1, Ask, 5, Ask - 500 * Point, Ask + 100 * Point, "Pinbar Buy", 444);
+                    }
+                 }
+              }
+
+           }
+
+        }
+     }
+  }
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
