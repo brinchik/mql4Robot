@@ -32,6 +32,22 @@ void OnTick()
 
 
 
+
+
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double ema5 = iMA(_Symbol, PERIOD_D1, 5, 0, MODE_EMA, PRICE_CLOSE, 0);
+double ema90 = iMA(_Symbol, PERIOD_D1, 90, 0, MODE_EMA, PRICE_CLOSE, 0);
+
+
+
+
+
+
+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -163,22 +179,22 @@ void OnTick()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-   if(TimeHour(currentTime) == 00 && TimeMinute(currentTime) == 30 && !hasPosition)
+   if(TimeHour(currentTime) == 00 && TimeMinute(currentTime) == 30 && !hasPosition && MathAbs(ema5 - ema90) < 1000 * Point)
      {
       //+-------------------------Запуск торгов-----------------------------------------+
-      if(prevDayClose > prevDayOpen && !buyStopOrderSentFirstBuy)
+      if(prevDayClose > prevDayOpen && !buyStopOrderSentFirstBuy && ema5 > ema90)
         {
-         bool result0 = OrderSend(Symbol(), OP_BUY, lotsize, Ask, 3, Ask - 200 * Point, 0, "my comment", 2222); // Отправляем ордер на торговый сервер
+         bool result0 = OrderSend(Symbol(), OP_BUY, lotsize, Ask, 3, 0, 0, "my comment", 2222); // Отправляем ордер на торговый сервер
          buyStopOrderSentFirstBuy = true;
         }
-      if(prevDayClose < prevDayOpen && !sellStopOrderSentFirstSell)
+      if(prevDayClose < prevDayOpen && !sellStopOrderSentFirstSell && ema5 < ema90 && MathAbs(ema90 - ema5) < 1000 * Point)
         {
-         bool result00 = OrderSend(Symbol(), OP_SELL, lotsize, Bid, 3, Bid + 200 * Point, 0, "my comment", 3333); // Отправляем ордер на торговый сервер
+         bool result00 = OrderSend(Symbol(), OP_SELL, lotsize, Bid, 3, 0, 0, "my comment", 3333); // Отправляем ордер на торговый сервер
          sellStopOrderSentFirstSell = true;
         }
      }
 
-
+ 
 
 
 
