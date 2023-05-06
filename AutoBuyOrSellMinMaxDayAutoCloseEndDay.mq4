@@ -39,8 +39,8 @@ void OnTick()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-double ema5 = iMA(_Symbol, PERIOD_D1, 5, 0, MODE_EMA, PRICE_CLOSE, 0);
-double ema90 = iMA(_Symbol, PERIOD_D1, 90, 0, MODE_EMA, PRICE_CLOSE, 0);
+   double ema5 = iMA(_Symbol, PERIOD_D1, 5, 0, MODE_EMA, PRICE_CLOSE, 0);
+   double ema90 = iMA(_Symbol, PERIOD_D1, 90, 0, MODE_EMA, PRICE_CLOSE, 0);
 
 
 
@@ -153,22 +153,22 @@ double ema90 = iMA(_Symbol, PERIOD_D1, 90, 0, MODE_EMA, PRICE_CLOSE, 0);
               }
            }
         }
-     
-            for(int cl2 = OrdersTotal() - 1; cl2 >= 0; cl2--)
+
+      for(int cl2 = OrdersTotal() - 1; cl2 >= 0; cl2--)
+        {
+         if(OrderSelect(cl2, SELECT_BY_POS, MODE_TRADES))
+           {
+            if(OrderType() == OP_BUYSTOP || OrderType() == OP_SELLSTOP || OrderType() == OP_BUYLIMIT || OrderType() == OP_SELLLIMIT)
               {
-               if(OrderSelect(cl2, SELECT_BY_POS, MODE_TRADES))
-                 {
-                  if(OrderType() == OP_BUYSTOP || OrderType() == OP_SELLSTOP || OrderType() == OP_BUYLIMIT || OrderType() == OP_SELLLIMIT)
-                    {
-                     bool closedE = OrderDelete(OrderTicket());
-                     if(closedE)
-                       {Print("Order closed successfully!");}
-                     else
-                       {Print("Failed to close Order! Error code: ", GetLastError());}
-                    }
-                 }
+               bool closedE = OrderDelete(OrderTicket());
+               if(closedE)
+                 {Print("Order closed successfully!");}
+               else
+                 {Print("Failed to close Order! Error code: ", GetLastError());}
               }
-       
+           }
+        }
+
      }
 
 
@@ -194,7 +194,7 @@ double ema90 = iMA(_Symbol, PERIOD_D1, 90, 0, MODE_EMA, PRICE_CLOSE, 0);
         }
      }
 
- 
+
 
 
 
