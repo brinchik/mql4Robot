@@ -42,9 +42,21 @@ int init()
 void OnTick()
   {
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+
+int countBars = 0;
+bool flag3 = false;
+bool flagPrice = false;
+double maxPriceBar = 0;
+double firstPriceBar = 0;
 
 
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    bool longCondition = (EMA5 > EMA90) && (EMA5 - EMA90 > 0.0008);
    bool shortCondition = (EMA5 < EMA90) && (EMA90 - EMA5 > 0.0008);
 
@@ -56,22 +68,25 @@ void OnTick()
    EMA90 = iMA(_Symbol, _Period, 90, 0, MODE_EMA, PRICE_CLOSE, 0);
 
 
-double maxPriceBar;
-   int countBars = 0;
-   bool flag3 = false;
 
 
 
 
-   if (EMA5 > EMA90 && !flag3) // Добавлено условие !flag3
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+  if (EMA5 > EMA90 && !flag3)
     {
         countBars = 0;
         flag3 = false;
+        flagPrice = true;
+        maxPriceBar = 0;
+        firstPriceBar = 0;
 
-        for (int iv = 1; iv <= 500; iv++) // Здесь 500 - максимальное количество баров для проверки
+        for (int q = 1; q <= 500; q++)
         {
-            double ema5_i = iMA(NULL, 0, 5, 0, MODE_EMA, PRICE_CLOSE, iv);
-            double ema90_i = iMA(NULL, 0, 90, 0, MODE_EMA, PRICE_CLOSE, iv);
+            double ema5_i = iMA(NULL, 0, 5, 0, MODE_EMA, PRICE_CLOSE, q);
+            double ema90_i = iMA(NULL, 0, 90, 0, MODE_EMA, PRICE_CLOSE, q);
 
             if (ema5_i > ema90_i)
             {
@@ -79,16 +94,6 @@ double maxPriceBar;
                 if (countBars == 96)
                 {
                     flag3 = true;
-
-                    maxPriceBar = -1; // Сброс максимальной цены перед каждой итерацией цикла
-                    for (int j = iv - countBars; j < iv; j++)
-                    {
-                        double high_j = High[j];
-                        if (high_j > maxPriceBar)
-                        {
-                            maxPriceBar = high_j;
-                        }
-                    }
                     break;
                 }
             }
@@ -96,7 +101,21 @@ double maxPriceBar;
             {
                 countBars = 0;
                 flag3 = false;
+                flagPrice = false;
                 break;
+            }
+
+            if (flagPrice)
+            {
+                double currentPrice = Close[q];
+                if (maxPriceBar < currentPrice)
+                {
+                    maxPriceBar = currentPrice;
+                }
+                if (firstPriceBar == 0)
+                {
+                    firstPriceBar = currentPrice;
+                }
             }
         }
     }
@@ -104,6 +123,15 @@ double maxPriceBar;
     {
         countBars = 0;
         flag3 = false;
+        flagPrice = false;
+        maxPriceBar = 0;
+        firstPriceBar = 0;
+    }
+
+    if (flag3 && flagPrice)
+    {
+        double sumUp = (maxPriceBar - firstPriceBar) / Point;
+        Print("Max price bar: ", maxPriceBar, " First price bar: ", firstPriceBar, " Sum up: ", sumUp);
     }
 
 
@@ -171,7 +199,7 @@ double maxPriceBar;
         }
      }
 
-   Comment("flag1: ", flag1, " flag2: ", flag2, " flag3: ", flag3, " countBars: ", countBars, " maxPriceBar: ", maxPriceBar);
+   Comment("flag1: ", flag1, " flag2: ", flag2, " flag3: ", flag3, " countBars: ", countBars, " maxPriceBar: ", maxPriceBar, " sumUp: ", sumUp);
 
 
 
