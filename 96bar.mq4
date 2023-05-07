@@ -56,46 +56,55 @@ void OnTick()
    EMA90 = iMA(_Symbol, _Period, 90, 0, MODE_EMA, PRICE_CLOSE, 0);
 
 
-
+double maxPriceBar;
    int countBars = 0;
    bool flag3 = false;
 
 
 
 
-   if(EMA5 > EMA90 && !flag3)  // Добавлено условие !flag3
-     {
-      countBars = 0;
-      flag3 = false;
+   if (EMA5 > EMA90 && !flag3) // Добавлено условие !flag3
+    {
+        countBars = 0;
+        flag3 = false;
 
-      for(int iv = 1; iv <= 500; iv++)  // Здесь 500 - максимальное количество баров для проверки
+        for (int iv = 1; iv <= 500; iv++) // Здесь 500 - максимальное количество баров для проверки
         {
-         double ema5_i = iMA(NULL, 0, 5, 0, MODE_EMA, PRICE_CLOSE, iv);
-         double ema90_i = iMA(NULL, 0, 90, 0, MODE_EMA, PRICE_CLOSE, iv);
+            double ema5_i = iMA(NULL, 0, 5, 0, MODE_EMA, PRICE_CLOSE, iv);
+            double ema90_i = iMA(NULL, 0, 90, 0, MODE_EMA, PRICE_CLOSE, iv);
 
-         if(ema5_i > ema90_i)
-           {
-            countBars++;
-            if(countBars == 96)
-              {
-               flag3 = true;
-               break;
-              }
-           }
-         else
-           {
-            countBars = 0;
-            flag3 = false;
-            break;
-           }
+            if (ema5_i > ema90_i)
+            {
+                countBars++;
+                if (countBars == 96)
+                {
+                    flag3 = true;
+
+                    maxPriceBar = -1; // Сброс максимальной цены перед каждой итерацией цикла
+                    for (int j = iv - countBars; j < iv; j++)
+                    {
+                        double high_j = High[j];
+                        if (high_j > maxPriceBar)
+                        {
+                            maxPriceBar = high_j;
+                        }
+                    }
+                    break;
+                }
+            }
+            else
+            {
+                countBars = 0;
+                flag3 = false;
+                break;
+            }
         }
-     }
-   else
-      if(EMA5 < EMA90)
-        {
-         countBars = 0;
-         flag3 = false;
-        }
+    }
+    else if (EMA5 < EMA90)
+    {
+        countBars = 0;
+        flag3 = false;
+    }
 
 
 
@@ -162,7 +171,7 @@ void OnTick()
         }
      }
 
-   Comment("flag1: ", flag1, " flag2: ", flag2, " flag3: ", flag3, " countBars: ", countBars);
+   Comment("flag1: ", flag1, " flag2: ", flag2, " flag3: ", flag3, " countBars: ", countBars, " maxPriceBar: ", maxPriceBar);
 
 
 
