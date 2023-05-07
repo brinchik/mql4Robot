@@ -51,7 +51,7 @@ bool flag3 = false;
 bool flagPrice = false;
 double maxPriceBar = 0;
 double firstPriceBar = 0;
-
+double priceBar1;
 
 
 //+------------------------------------------------------------------+
@@ -82,6 +82,7 @@ double firstPriceBar = 0;
         flagPrice = true;
         maxPriceBar = 0;
         firstPriceBar = 0;
+        // priceBar1 = NormalizeDouble(Close[1], Digits);
 
         for (int q = 1; q <= 500; q++)
         {
@@ -91,6 +92,10 @@ double firstPriceBar = 0;
             if (ema5_i > ema90_i)
             {
                 countBars++;
+                if (countBars == 1) // первый бар после пересечения EMA5
+                {
+                    priceBar1 = NormalizeDouble(Close[1], Digits);
+                }
                 if (countBars == 96)
                 {
                     flag3 = true;
@@ -107,7 +112,7 @@ double firstPriceBar = 0;
 
             if (flagPrice)
             {
-                double currentPrice = Close[q];
+                double currentPrice = NormalizeDouble(High[q], Digits);
                 if (maxPriceBar < currentPrice)
                 {
                     maxPriceBar = currentPrice;
@@ -131,10 +136,27 @@ double firstPriceBar = 0;
     if (flag3 && flagPrice)
     {
         double sumUp = (maxPriceBar - firstPriceBar) / Point;
-        Print("Max price bar: ", maxPriceBar, " First price bar: ", firstPriceBar, " Sum up: ", sumUp);
     }
 
 
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double totalPips = 0;
+for (int e = OrdersTotal() - 1; e >= 0; e--)
+{
+    if (OrderSelect(e, SELECT_BY_POS, MODE_TRADES))
+    {
+        if (OrderType() == OP_BUY || OrderType() == OP_SELL)
+        {
+            double profit = OrderProfit();
+            double symbolPoint = SymbolInfoDouble(OrderSymbol(), SYMBOL_TRADE_TICK_SIZE);
+            double pips = profit / symbolPoint;
+            totalPips += pips / 100000;
+        }
+    }
+}
 
 
 
@@ -199,7 +221,7 @@ double firstPriceBar = 0;
         }
      }
 
-   Comment("flag1: ", flag1, " flag2: ", flag2, " flag3: ", flag3, " countBars: ", countBars, " maxPriceBar: ", maxPriceBar, " sumUp: ", sumUp);
+   Comment("flag1: ", flag1, " flag2: ", flag2, " flag3: ", flag3, " countBars: ", countBars, " maxPriceBar: ", maxPriceBar, " sumUp: ", sumUp, " priceBar1: ", priceBar1, " totalPips: ", totalPips);
 
 
 
