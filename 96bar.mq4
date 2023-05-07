@@ -51,7 +51,7 @@ bool flag3 = false;
 bool flagPrice = false;
 double maxPriceBar = 0;
 double firstPriceBar = 0;
-double priceBar1;
+
 
 
 //+------------------------------------------------------------------+
@@ -92,10 +92,7 @@ double priceBar1;
             if (ema5_i > ema90_i)
             {
                 countBars++;
-                if (countBars == 1) // первый бар после пересечения EMA5
-                {
-                    priceBar1 = NormalizeDouble(Close[1], Digits);
-                }
+               
                 if (countBars == 96)
                 {
                     flag3 = true;
@@ -221,7 +218,7 @@ for (int e = OrdersTotal() - 1; e >= 0; e--)
         }
      }
 
-   Comment("flag1: ", flag1, " flag2: ", flag2, " flag3: ", flag3, " countBars: ", countBars, " maxPriceBar: ", maxPriceBar, " sumUp: ", sumUp, " priceBar1: ", priceBar1, " totalPips: ", totalPips);
+   Comment("flag1: ", flag1, " flag2: ", flag2, " flag3: ", flag3, " countBars: ", countBars, " maxPriceBar: ", maxPriceBar, " sumUp: ", sumUp, " totalPips: ", totalPips);
 
 
 
