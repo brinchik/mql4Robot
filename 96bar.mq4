@@ -78,7 +78,7 @@ void OnTick()
 //|                                                                  |
 //+------------------------------------------------------------------+
    bool longCondition = (EMA5 > EMA90) && (EMA5 - EMA90 > 0.0008);
-   bool shortCondition = (EMA5 < EMA90) && (EMA90 - EMA5 > 0.0008);
+   bool shortCondition = (EMA5 < EMA90) && (EMA90 - EMA5 > 0.0001);
 
   
 
@@ -144,6 +144,8 @@ void OnTick()
       maxPriceBar = 0;
       firstPriceBar = 0;
       sumUp = 0;
+      flag4 = false;
+
      }
 
 //+------------------------------------------------------------------+
@@ -172,14 +174,11 @@ void OnTick()
 //+------------------------------------------------------------------+
 //? Открываем сделку когда ема5 выше 90й в течении 96 баров (8часов на М5)
 //+------------------------------------------------------------------+
-   if(flag3)
+   if(flag1 && flag3 && !buy1)
      {
-      if(!buy1)
-        {
          OrderSend(_Symbol, OP_SELL, 0.1, Bid, 3, 0, 0, "EMA cross", 123, 0, Green);
          buy1 = true;
          flag4 = true;
-        }
      }
 //+------------------------------------------------------------------+
 //? Устанавливаем SellLimit на ближайший максимум
@@ -189,13 +188,49 @@ void OnTick()
       OrderSend(_Symbol, OP_SELLLIMIT, 0.1, maxPriceBar, 3, 0, 0, "EMA cross", 123, 0, Green);
       buy2 = true;
      }
+  if(sumUp == 0 && buy2)
+  {
+  buy2 = false;
+  }
+
+if(shortCondition)
+{
+  buy1 = false;
+}
 
 
 
+if(totalPips >= 25)
+{
+  double current_priceB = MarketInfo(Symbol(), MODE_BID);
+      double current_priceA = MarketInfo(Symbol(), MODE_ASK);
+      for(int ci = OrdersTotal() - 1; ci >= 0; ci--)
+        {
+         if(OrderSelect(ci, SELECT_BY_POS, MODE_TRADES))
+           {
+            if(OrderSymbol() == _Symbol) // Убедитесь, что это сделка для текущего символа
+              {
+               if(OrderType() == OP_BUY)
+                 {
+                  bool closedA = OrderClose(OrderTicket(), OrderLots(), current_priceB, 10, clrRed);
+                  if(closedA)
+                    {Print("Trade closed successfully!");}
+                  else
+                    {Print("Failed to close trade! Error code: ", GetLastError());}
+                 }
+               if(OrderType() == OP_SELL)
+                 {
+                  bool closedB = OrderClose(OrderTicket(), OrderLots(), current_priceA, 10, clrRed);
+                  if(closedB)
+                    {Print("Trade closed successfully!");}
+                  else
+                    {Print("Failed to close trade! Error code: ", GetLastError());}
+                 }
 
-
-
-
+              }
+           }
+        }
+}
 
 
 
