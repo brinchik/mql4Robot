@@ -151,33 +151,50 @@ void OnTick()
 //+------------------------------------------------------------------+
 //? Открываем сделку когда ема5 выше 90й в течении 96 баров (8часов на М5)
 //+------------------------------------------------------------------+
+   int numberOfOrders = 10;
    if(flag1 && flag3 && !buy1 && prevClose > EMA90)
      {
-      OrderSend(_Symbol, OP_SELL, lotSize, Bid, 3, 0, 0, "EMA cross", 123, 0, Green);
-      buy1 = true;
-      flag4 = true;
+      for(int t = 0; t < numberOfOrders; t++)
+        {
+         bool result = OrderSend(_Symbol, OP_SELL, lotSize, Bid, 3, 0, 0, "EMA cross", 123, 0, Green);
+         if(result)
+           {
+            Print("Buy order ", MagicNumber, " opened successfully!");
+            buy1 = true;
+            flag4 = true;
+           }
+         else
+           {
+            Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());
+           }
+        }
      }
 //+------------------------------------------------------------------+
 //? Устанавливаем SellLimit на ближайший максимум
 //+------------------------------------------------------------------+
+   int limitorders = 10;
+   double priceStep = 20 * Point;
    if(flag4 && sumUp >= 100 && !buy2)
      {
-      OrderSend(_Symbol, OP_SELLLIMIT, lotSize, maxPriceBar, 3, 0, 0, "EMA cross", 123, 0, Green);
-      buy2 = true;
+      for(int y = 0; y < limitorders; y++)
+        {
+         bool result1 = OrderSend(_Symbol, OP_SELLLIMIT, lotSize, maxPriceBar, 3, 0, 0, "EMA cross", 123, 0, Green);
+         if(result1)
+           {
+            Print("Buy order ", MagicNumber, " opened successfully!");
+            buy2 = true;
+           }
+         else
+           {
+            Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());
+           }
+         maxPriceBar += priceStep;
+        }
      }
    if(sumUp == 0 && buy2)
      {
       buy2 = false;
      }
-
-   if(shortCondition)
-     {
-
-     }
-
-
-
-
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -209,21 +226,18 @@ void OnTick()
    double high = iHigh(Symbol(), PERIOD_CURRENT, 0);
    double low = iLow(Symbol(), PERIOD_CURRENT, 0);
 
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-   if((high - low) > 300 * Point && !buy3)
-     {
-      OrderSend(_Symbol, OP_BUY, totalLotsSell, Ask, 3, 0, 0, "EMA cross", 01, 0, Green);
-      buy3 = true;
-     }
+//  if((high - low) > 300 * Point && !buy3)
+//    {
+//     OrderSend(_Symbol, OP_BUY, totalLotsSell, Ask, 3, 25 * Point, 0, "EMA cross", 01, 0, Green);
+//     buy3 = true;
+//    }
 //  if((high - low) > 300 * Point && !buy4 && buy3)
 //    {
 //     OrderSend(_Symbol, OP_BUY, totalLotsSell - totalLotsBuy, Ask, 3, 0, 0, "EMA cross", 01, 0, Green);
 //     buy4 = true;
 //    }
 // if (totalPips <= -1000 && !buy4) {
-//     OrderSend(_Symbol, OP_BUY, totalLots, Ask, 3, 0, 0, "EMA cross", 123, 0, Green);
+//     OrderSend(_Symbol, OP_BUY, totalLotsSell * 4, Ask, 3, 0, 0, "EMA cross", 123, 0, Green);
 //    buy4 = true;
 // }
 
@@ -247,23 +261,19 @@ void OnTick()
               {
                if(OrderType() == OP_BUY)
                  {
-                  bool closedA = OrderClose(OrderTicket(), OrderLots(), current_priceB, 10, clrRed);
-                  buy4 = false;
-                  buy3 = false;
+                  bool closedBuy = OrderClose(OrderTicket(), OrderLots(), current_priceB, 10, clrRed);
                   flag4 = false;
-                  if(closedA)
-                    {Print("Trade closed successfully!");}
+                  if(closedBuy)
+                    {Print("Trade Buy closed OK!");}
                   else
                     {Print("Failed to close trade! Error code: ", GetLastError());}
                  }
                if(OrderType() == OP_SELL)
                  {
-                  bool closedB = OrderClose(OrderTicket(), OrderLots(), current_priceA, 10, clrRed);
-                  buy4 = false;
-                  buy3 = false;
+                  bool closedSell = OrderClose(OrderTicket(), OrderLots(), current_priceA, 10, clrRed);
                   flag4 = false;
-                  if(closedB)
-                    {Print("Trade closed successfully!");}
+                  if(closedSell)
+                    {Print("Trade Sell closed OK!");}
                   else
                     {Print("Failed to close trade! Error code: ", GetLastError());}
                  }
@@ -278,9 +288,9 @@ void OnTick()
            {
             if(OrderType() == OP_BUYSTOP || OrderType() == OP_SELLSTOP || OrderType() == OP_BUYLIMIT || OrderType() == OP_SELLLIMIT)
               {
-               bool closedE = OrderDelete(OrderTicket());
-               if(closedE)
-                 {Print("Order closed successfully!");}
+               bool closedAllOrder = OrderDelete(OrderTicket());
+               if(closedAllOrder)
+                 {Print("Order closed OK!");}
                else
                  {Print("Failed to close Order! Error code: ", GetLastError());}
               }
