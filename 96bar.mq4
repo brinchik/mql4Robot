@@ -3,11 +3,29 @@
 //|                                  Copyright 2023, Example, Inc.    |
 //|                                              https://example.com/ |
 //+------------------------------------------------------------------+
+double accountBalance;
 
 
+
+// ? Инпуты для ввода данных
+input int numEmaF = 5;
+input int numEmaS = 90;
+
+input int numBarIwant = 96;
+
+input int firstOrderIwant = 2;
+input int MathAbs1 = 175;
+
+input int limitordersIwant = 2;
+input int priceStepLimOrders = 20;
+input int MathAbs2 = 100;
+input int sumUpLimOrders = 100;
+
+input double totalPipsIwant = 25;
 //+------------------------------------------------------------------+
-input double slippage = 2;
+double slippage = 2;
 double lotSize = 0.1;
+double lot = 0;
 int MagicNumber = 003;
 //+------------------------------------------------------------------+
 
@@ -45,7 +63,8 @@ bool flag4 = false;
 //+------------------------------------------------------------------+
 void OnTick()
   {
-
+   accountBalance = AccountBalance();
+   datetime currentTime = TimeCurrent();
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -65,8 +84,8 @@ void OnTick()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-   EMA5 = iMA(_Symbol, _Period, 5, 0, MODE_EMA, PRICE_CLOSE, 0);
-   EMA90 = iMA(_Symbol, _Period, 90, 0, MODE_EMA, PRICE_CLOSE, 0);
+   EMA5 = iMA(_Symbol, _Period, numEmaF, 0, MODE_EMA, PRICE_CLOSE, 0);
+   EMA90 = iMA(_Symbol, _Period, numEmaS, 0, MODE_EMA, PRICE_CLOSE, 0);
 
    flag1 = (EMA5 > EMA90 && Bid > EMA90);
    flag2 = (EMA5 < EMA90);
@@ -85,7 +104,7 @@ void OnTick()
          if(ema5_i > ema90_i)
            {
             countBars++;
-            if(countBars == 96)
+            if(countBars == numBarIwant)
               {
                flag3 = true;
                break;
@@ -127,7 +146,7 @@ void OnTick()
      }
 
 //+------------------------------------------------------------------+
-//|                                                                  |
+//? Считаем прибыль или убыток
 //+------------------------------------------------------------------+
    double totalPips = 0;
    for(int e = OrdersTotal() - 1; e >= 0; e--)
@@ -146,58 +165,7 @@ void OnTick()
 
 
 //+------------------------------------------------------------------+
-//! Начало торговли
-//+------------------------------------------------------------------+
-//+------------------------------------------------------------------+
-//? Открываем сделку когда ема5 выше 90й в течении 96 баров (8часов на М5)
-//+------------------------------------------------------------------+
-   int numberOfOrders = 10;
-   if(flag1 && flag3 && !buy1 && prevClose > EMA90)
-     {
-      for(int t = 0; t < numberOfOrders; t++)
-        {
-         bool result = OrderSend(_Symbol, OP_SELL, lotSize, Bid, 3, 0, 0, "EMA cross", 123, 0, Green);
-         if(result)
-           {
-            Print("Buy order ", MagicNumber, " opened successfully!");
-            buy1 = true;
-            flag4 = true;
-           }
-         else
-           {
-            Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());
-           }
-        }
-     }
-//+------------------------------------------------------------------+
-//? Устанавливаем SellLimit на ближайший максимум
-//+------------------------------------------------------------------+
-   int limitorders = 10;
-   double priceStep = 20 * Point;
-   if(flag4 && sumUp >= 100 && !buy2)
-     {
-      for(int y = 0; y < limitorders; y++)
-        {
-         bool result1 = OrderSend(_Symbol, OP_SELLLIMIT, lotSize, maxPriceBar, 3, 0, 0, "EMA cross", 123, 0, Green);
-         if(result1)
-           {
-            Print("Buy order ", MagicNumber, " opened successfully!");
-            buy2 = true;
-           }
-         else
-           {
-            Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());
-           }
-         maxPriceBar += priceStep;
-        }
-     }
-   if(sumUp == 0 && buy2)
-     {
-      buy2 = false;
-     }
-
-//+------------------------------------------------------------------+
-//|                                                                  |
+//? Подсчитываем количество лотов на покупку и на продажу
 //+------------------------------------------------------------------+
    int totalPositions = OrdersTotal();
 
@@ -218,6 +186,70 @@ void OnTick()
            }
         }
      }
+
+
+//+------------------------------------------------------------------+
+//! Начало торговли
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//? Открываем сделку когда ема5 выше 90й в течении 96 баров (8часов на М5)
+//+------------------------------------------------------------------+
+   int numberOfOrders = firstOrderIwant;
+   if(MathAbs(EMA5 - EMA90) > MathAbs1 * Point)
+   {
+      if(flag1 && flag3 && !buy1 && prevClose > EMA90)
+        {
+         for(int t = 0; t < numberOfOrders; t++)
+           {
+            bool result = OrderSend(_Symbol, OP_SELL, lotSize, Bid, 3, 0, 0, "EMA cross", 123, 0, Green);
+            if(result)
+              {
+               Print("Buy order ", MagicNumber, " opened successfully!");
+               buy1 = true;
+               flag4 = true;
+              }
+            else
+              {
+               Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());
+              }
+           }
+        }
+}
+//+------------------------------------------------------------------+
+//? Устанавливаем SellLimit на ближайший максимум
+//+------------------------------------------------------------------+
+//  int limitorders = totalLotsSell * 10;
+   int limitorders = limitordersIwant;
+   double priceStep = 20 * Point;
+   double lt = 0.1;
+   double lotSize2 = 0.1;
+   if(MathAbs(EMA5 - EMA90) > MathAbs2 * Point)
+     {
+      if(flag4 && sumUp >= sumUpLimOrders && !buy2)
+        {
+         for(int y = 0; y < limitorders; y++)
+           {
+            bool result1 = OrderSend(_Symbol, OP_SELLLIMIT, lotSize2, maxPriceBar, 3, 0, 0, "EMA cross", 123, 0, Green);
+            if(result1)
+              {
+               Print("Buy order ", MagicNumber, " opened successfully!");
+               buy2 = true;
+              }
+            else
+              {
+               Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());
+              }
+            maxPriceBar += priceStep;
+            lotSize2 += lt;
+           }
+        }
+     }
+   if(sumUp == 0 && buy2)
+     {
+      buy2 = false;
+     }
+
+
 
 
 //+------------------------------------------------------------------+
@@ -242,14 +274,50 @@ void OnTick()
 // }
 
 
-
-
-
-
+  //  if(accountBalance >= 11000)
+  //    {
+  //     lot = +0.1;
+  //    }
+  //  if(accountBalance >= 12000)
+  //    {
+  //     lot = +0.2;
+  //    }
+  //  if(accountBalance >= 13000)
+  //    {
+  //     lot = +0.3;
+  //    }
+  //  if(accountBalance >= 14000)
+  //    {
+  //     lot = +0.4;
+  //    }
+  //  if(accountBalance >= 15000)
+  //    {
+  //     lot = +0.5;
+  //    }
+  //  if(accountBalance >= 16000)
+  //    {
+  //     lot = +0.6;
+  //    }
+  //  if(accountBalance >= 17000)
+  //    {
+  //     lot = +0.7;
+  //    }
+  //  if(accountBalance >= 18000)
+  //    {
+  //     lot = +0.8;
+  //    }
+  //  if(accountBalance >= 19000)
+  //    {
+  //     lot = +0.9;
+  //    }
+  //  if(accountBalance >= 20000)
+  //    {
+  //     lot = +1;
+  //    }
 //+------------------------------------------------------------------+
-//|                                                                  |
+//? Закрываем сделки и ордера при достижении прибыли в пунктах
 //+------------------------------------------------------------------+
-   if(totalPips >= 25)
+   if(totalPips >= totalPipsIwant)
      {
       double current_priceB = MarketInfo(Symbol(), MODE_BID);
       double current_priceA = MarketInfo(Symbol(), MODE_ASK);
@@ -263,6 +331,7 @@ void OnTick()
                  {
                   bool closedBuy = OrderClose(OrderTicket(), OrderLots(), current_priceB, 10, clrRed);
                   flag4 = false;
+                  lotSize2 = 0.1;
                   if(closedBuy)
                     {Print("Trade Buy closed OK!");}
                   else
@@ -272,6 +341,7 @@ void OnTick()
                  {
                   bool closedSell = OrderClose(OrderTicket(), OrderLots(), current_priceA, 10, clrRed);
                   flag4 = false;
+                  lotSize2 = 0.1;
                   if(closedSell)
                     {Print("Trade Sell closed OK!");}
                   else
@@ -299,7 +369,12 @@ void OnTick()
      }
 
 
-   Comment("flag1: ", flag1, " flag2: ", flag2, " flag3: ", flag3, " countBars: ", countBars, " maxPriceBar: ", maxPriceBar, " sumUp: ", sumUp, " totalPips: ", totalPips, " flag4: ", flag4, " buy1: ", buy1, " totalLotsSell: ", totalLotsSell, " totalLotsBuy: ", totalLotsBuy);
+
+
+
+
+
+   Comment("flag1: ", flag1, " flag2: ", flag2, " flag3: ", flag3, " countBars: ", countBars, " maxPriceBar: ", maxPriceBar, " sumUp: ", sumUp, " totalPips: ", totalPips, " flag4: ", flag4, " buy1: ", buy1, " totalLotsSell: ", totalLotsSell, " totalLotsBuy: ", totalLotsBuy, " accountBalance: ", lotSize);
 
   }
 //+------------------------------------------------------------------+
