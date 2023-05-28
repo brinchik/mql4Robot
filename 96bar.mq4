@@ -65,6 +65,17 @@ void OnTick()
   {
    accountBalance = AccountBalance();
    datetime currentTime = TimeCurrent();
+
+
+double prevDayClose2 = iClose(_Symbol, PERIOD_D1, 2);
+double prevDayOpen2 = iOpen(_Symbol, PERIOD_D1, 2);
+double prevDayClose1 = iClose(_Symbol, PERIOD_D1, 1);
+double prevDayOpen1 = iOpen(_Symbol, PERIOD_D1, 1);
+bool flag20 = false;
+if (prevDayClose1 > prevDayClose2 && prevDayClose2 > prevDayOpen2)
+{
+  flag20 = true;
+}
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -195,13 +206,16 @@ void OnTick()
 //? Открываем сделку когда ема5 выше 90й в течении 96 баров (8часов на М5)
 //+------------------------------------------------------------------+
    int numberOfOrders = firstOrderIwant;
+   if(!flag20)
+   {
+
    if(MathAbs(EMA5 - EMA90) > MathAbs1 * Point)
    {
       if(flag1 && flag3 && !buy1 && prevClose > EMA90)
         {
          for(int t = 0; t < numberOfOrders; t++)
            {
-            bool result = OrderSend(_Symbol, OP_SELL, lotSize, Bid, 3, 0, 0, "EMA cross", 123, 0, Green);
+            bool result = OrderSend(_Symbol, OP_BUY, lotSize, Ask, 3, 0, 0, "EMA cross", 123, 0, Green);
             if(result)
               {
                Print("Buy order ", MagicNumber, " opened successfully!");
@@ -215,6 +229,7 @@ void OnTick()
            }
         }
 }
+   }
 //+------------------------------------------------------------------+
 //? Устанавливаем SellLimit на ближайший максимум
 //+------------------------------------------------------------------+
@@ -229,7 +244,7 @@ void OnTick()
         {
          for(int y = 0; y < limitorders; y++)
            {
-            bool result1 = OrderSend(_Symbol, OP_SELLLIMIT, lotSize2, maxPriceBar, 3, 0, 0, "EMA cross", 123, 0, Green);
+            bool result1 = OrderSend(_Symbol, OP_BUYSTOP, lotSize2, maxPriceBar, 3, 0, 0, "EMA cross", 123, 0, Green);
             if(result1)
               {
                Print("Buy order ", MagicNumber, " opened successfully!");
@@ -317,6 +332,7 @@ void OnTick()
 //+------------------------------------------------------------------+
 //? Закрываем сделки и ордера при достижении прибыли в пунктах
 //+------------------------------------------------------------------+
+//  || totalPips <= -1000
    if(totalPips >= totalPipsIwant)
      {
       double current_priceB = MarketInfo(Symbol(), MODE_BID);
@@ -369,7 +385,56 @@ void OnTick()
      }
 
 
+  //  if(TimeHour(currentTime) == 23 && TimeMinute(currentTime) == 59)
+  //    {
+  //     double current_priceB1 = MarketInfo(Symbol(), MODE_BID);
+  //     double current_priceA1 = MarketInfo(Symbol(), MODE_ASK);
+  //     for(int ci1 = OrdersTotal() - 1; ci1 >= 0; ci1--)
+  //       {
+  //        if(OrderSelect(ci1, SELECT_BY_POS, MODE_TRADES))
+  //          {
+  //           if(OrderSymbol() == _Symbol) // Убедитесь, что это сделка для текущего символа
+  //             {
+  //              if(OrderType() == OP_BUY)
+  //                {
+  //                 bool closedBuy1 = OrderClose(OrderTicket(), OrderLots(), current_priceB1, 10, clrRed);
+  //                 flag4 = false;
+  //                 lotSize2 = 0.1;
+  //                 if(closedBuy1)
+  //                   {Print("Trade Buy closed OK!");}
+  //                 else
+  //                   {Print("Failed to close trade! Error code: ", GetLastError());}
+  //                }
+  //              if(OrderType() == OP_SELL)
+  //                {
+  //                 bool closedSell1 = OrderClose(OrderTicket(), OrderLots(), current_priceA1, 10, clrRed);
+  //                 flag4 = false;
+  //                 lotSize2 = 0.1;
+  //                 if(closedSell1)
+  //                   {Print("Trade Sell closed OK!");}
+  //                 else
+  //                   {Print("Failed to close trade! Error code: ", GetLastError());}
+  //                }
 
+  //             }
+  //          }
+  //       }
+
+  //     for(int cl22 = OrdersTotal() - 1; cl22 >= 0; cl22--)
+  //       {
+  //        if(OrderSelect(cl22, SELECT_BY_POS, MODE_TRADES))
+  //          {
+  //           if(OrderType() == OP_BUYSTOP || OrderType() == OP_SELLSTOP || OrderType() == OP_BUYLIMIT || OrderType() == OP_SELLLIMIT)
+  //             {
+  //              bool closedAllOrder1 = OrderDelete(OrderTicket());
+  //              if(closedAllOrder1)
+  //                {Print("Order closed OK!");}
+  //              else
+  //                {Print("Failed to close Order! Error code: ", GetLastError());}
+  //             }
+  //          }
+  //       }
+  //    }
 
 
 
