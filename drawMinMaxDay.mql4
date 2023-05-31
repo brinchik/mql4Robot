@@ -1,0 +1,64 @@
+
+
+
+datetime last_candle_time;
+datetime prev_day_start_time;
+
+int last_candle_index;
+int prev_day_index;
+int prev_day_of_week;
+
+double prevDayHight;
+double prevDayLow;
+
+
+void OnTick()
+{
+
+
+ // Получаем индекс свечи предыдущего дня на дневном графике
+ // Получаем время начала предыдущего торгового дня
+    prev_day_start_time = iTime(_Symbol, PERIOD_D1, 1);
+    prev_day_of_week = TimeDayOfWeek(prev_day_start_time);
+    while (prev_day_of_week == 0 || prev_day_of_week == 6)
+    {
+        // Если предыдущий день выходной, уменьшаем дату на один день
+        prev_day_start_time -= PeriodSeconds(PERIOD_D1);
+        prev_day_of_week = TimeDayOfWeek(prev_day_start_time);
+    }
+
+
+prev_day_index = iBarShift(_Symbol, PERIOD_D1, prev_day_start_time);
+
+// Получаем максимум и минимум предыдущего дня
+prevDayHight = iHigh(_Symbol, PERIOD_D1, prev_day_index);
+prevDayLow = iLow(_Symbol, PERIOD_D1, prev_day_index);
+
+
+
+
+
+datetime startTime = iTime(_Symbol, PERIOD_D1, 1); // Время начала предыдущего дня
+
+datetime endOfDay = TimeCurrent(); // Текущее время
+int year = TimeYear(endOfDay); // Год
+int month = TimeMonth(endOfDay); // Месяц
+int day = TimeDay(endOfDay); // День
+int endHour = 23; // Часы
+int endMinute = 59; // Минуты
+
+endOfDay = StrToTime(year + "." + month + "." + day + " " + endHour + ":" + endMinute); // Установка времени на 23:59
+
+
+// Рисование линии максимума предыдущего дня
+ObjectCreate(0, "MaxLine", OBJ_TREND, 0, startTime, prevDayHight, endOfDay, prevDayHight);
+ObjectSet("MaxLine", OBJPROP_COLOR, clrGray); // Изменение цвета на серый
+ObjectSet("MaxLine", OBJPROP_WIDTH, 2); // Изменение толщины на 2
+ObjectSet("MaxLine", OBJPROP_RAY, false);
+
+// Рисование линии минимума предыдущего дня
+ObjectCreate(0, "MinLine", OBJ_TREND, 0, startTime, prevDayLow, endOfDay, prevDayLow);
+ObjectSet("MinLine", OBJPROP_COLOR, clrGray); // Изменение цвета на серый
+ObjectSet("MinLine", OBJPROP_WIDTH, 2); // Изменение толщины на 2
+ObjectSet("MinLine", OBJPROP_RAY, false); // Удаление галочки "Луч"
+}
