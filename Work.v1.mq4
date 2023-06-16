@@ -23,51 +23,95 @@ double EMA90;
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//? Очищаем предыдущие линии
+//+------------------------------------------------------------------+
+
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 void OnTick()
   {
 
 
+
+
+
 //+------------------------------------------------------------------+
-//? Получаем макс. и мин. предыдущего дня
+//? Получаем максимумы и минимумы предыдущих пяти дней
 //+------------------------------------------------------------------+
-   prev_day_start_time = iTime(_Symbol, PERIOD_D1, 1);
-   prev_day_of_week = TimeDayOfWeek(prev_day_start_time);
-   while(prev_day_of_week == 0 || prev_day_of_week == 6)
+
+   datetime startTime;
+   datetime endOfDay;
+   datetime nextDayStart;
+   int labelOffset = 20; // Отступ меток от вертикальных линий
+int verticalOffset = 30; //
+string allPointLabels = ""; // Строка для хранения всех меток
+   for(int i2 = 1; i2 <= 5; i2++)
      {
-      // Если предыдущий день выходной, уменьшаем дату на один день
-      prev_day_start_time -= PeriodSeconds(PERIOD_D1);
+      prev_day_start_time = iTime(_Symbol, PERIOD_D1, i2);
       prev_day_of_week = TimeDayOfWeek(prev_day_start_time);
-     }
-   prev_day_index = iBarShift(_Symbol, PERIOD_D1, prev_day_start_time);
-// Получаем максимум и минимум предыдущего дня
-   prevDayHight = iHigh(_Symbol, PERIOD_D1, prev_day_index);
-   prevDayLow = iLow(_Symbol, PERIOD_D1, prev_day_index);
 
-//+------------------------------------------------------------------+
-//? Рисуем макс. и мин. предыдущего дня
-//+------------------------------------------------------------------+
-   datetime startTime = iTime(_Symbol, PERIOD_D1, 1); // Время начала предыдущего дня
+      while(prev_day_of_week == 0 || prev_day_of_week == 6)
+        {
+         // Если предыдущий день выходной, уменьшаем дату на один день
+         prev_day_start_time -= PeriodSeconds(PERIOD_D1);
+         prev_day_of_week = TimeDayOfWeek(prev_day_start_time);
+        }
 
-   datetime endOfDay = TimeCurrent(); // Текущее время
-   int year = TimeYear(endOfDay); // Год
-   int month = TimeMonth(endOfDay); // Месяц
-   int day = TimeDay(endOfDay); // День
-   int endHour = 23; // Часы
-   int endMinute = 59; // Минуты
+      prev_day_index = iBarShift(_Symbol, PERIOD_D1, prev_day_start_time);
 
-   endOfDay = StrToTime(year + "." + month + "." + day + " " + endHour + ":" + endMinute); // Установка времени на 23:59
+      // Получаем максимум и минимум предыдущего дня
+      double prevDayHigh = iHigh(_Symbol, PERIOD_D1, prev_day_index);
+      prevDayLow = iLow(_Symbol, PERIOD_D1, prev_day_index);
 
-// Рисование линии максимума предыдущего дня
-   ObjectCreate(0, "MaxLine", OBJ_TREND, 0, startTime, prevDayHight, endOfDay, prevDayHight);
-   ObjectSet("MaxLine", OBJPROP_COLOR, clrGray); // Изменение цвета на серый
-   ObjectSet("MaxLine", OBJPROP_WIDTH, 2); // Изменение толщины на 2
-   ObjectSet("MaxLine", OBJPROP_RAY, false);
+      // Вычисляем время начала и конца дня
+      startTime = iTime(_Symbol, PERIOD_D1, i2);
+      nextDayStart = iTime(_Symbol, PERIOD_D1, i2 - 1);
+      int year = TimeYear(nextDayStart);
+      int month = TimeMonth(nextDayStart);
+      int day = TimeDay(nextDayStart);
+      int endHour = 23;
+      int endMinute = 59;
+      endOfDay = StrToTime(year + "." + month + "." + day + " " + endHour + ":" + endMinute);
 
-// Рисование линии минимума предыдущего дня
-   ObjectCreate(0, "MinLine", OBJ_TREND, 0, startTime, prevDayLow, endOfDay, prevDayLow);
-   ObjectSet("MinLine", OBJPROP_COLOR, clrGray); // Изменение цвета на серый
-   ObjectSet("MinLine", OBJPROP_WIDTH, 2); // Изменение толщины на 2
-   ObjectSet("MinLine", OBJPROP_RAY, false); // Удаление галочки "Луч"
+      // Рисуем линию максимума предыдущего дня
+      ObjectCreate(0, "MaxLine" + IntegerToString(i2), OBJ_TREND, 0, startTime, prevDayHigh, endOfDay, prevDayHigh);
+      ObjectSet("MaxLine" + IntegerToString(i2), OBJPROP_COLOR, clrLime);
+      ObjectSet("MaxLine" + IntegerToString(i2), OBJPROP_WIDTH, 2);
+      ObjectSet("MaxLine" + IntegerToString(i2), OBJPROP_RAY, false);
+
+      // Рисуем линию минимума предыдущего дня
+      ObjectCreate(0, "MinLine" + IntegerToString(i2), OBJ_TREND, 0, startTime, prevDayLow, endOfDay, prevDayLow);
+      ObjectSet("MinLine" + IntegerToString(i2), OBJPROP_COLOR, clrFireBrick);
+      ObjectSet("MinLine" + IntegerToString(i2), OBJPROP_WIDTH, 2);
+      ObjectSet("MinLine" + IntegerToString(i2), OBJPROP_RAY, false);
+
+      // Рисуем вертикальную линию от минимума до максимума
+      double verticalLineX = startTime + (endOfDay - startTime) / 2;
+      double verticalLineYStart = prevDayLow;
+      double verticalLineYEnd = prevDayHigh;
+      ObjectCreate(0, "VerticalLine" + IntegerToString(i2), OBJ_VLINE, 0, verticalLineX, verticalLineYStart, verticalLineX, verticalLineYEnd);
+      ObjectSet("VerticalLine" + IntegerToString(i2), OBJPROP_COLOR, clrDimGray);
+      ObjectSet("VerticalLine" + IntegerToString(i2), OBJPROP_WIDTH, 1);
+
+  // Отображаем количество пунктов от минимума до максимума
+    double pointDifference = prevDayHigh - prevDayLow;
+    string pointLabel = "Points: " + DoubleToString(pointDifference / Point, 2);
+    int labelX = ChartGetInteger(0, CHART_WIDTH_IN_PIXELS) - labelOffset;
+    int labelY = ChartGetInteger(0, CHART_HEIGHT_IN_PIXELS) - labelOffset - (labelOffset + verticalOffset) * i2; // Уменьшаем вертикальную координату метки
+    // ObjectCreate(0, "PointLabel" + IntegerToString(i2), OBJ_LABEL, 0, labelX, labelY);
+    ObjectSet("PointLabel" + IntegerToString(i2), OBJPROP_COLOR, clrGray);
+    ObjectSet("PointLabel" + IntegerToString(i2), OBJPROP_BACK, true);
+    // ObjectSetText("PointLabel" + IntegerToString(i2), pointLabel, 9, "Arial", clrYellow);
+    ObjectSet("PointLabel" + IntegerToString(i2), OBJPROP_ANCHOR, ANCHOR_RIGHT);
+
+    allPointLabels += pointLabel + "\n"; // Добавляем метку в строку всех меток
+}
+
 
 
 
@@ -168,13 +212,15 @@ void OnTick()
      }
 
 
-
-
+ double high = iHigh(Symbol(), PERIOD_D1, 0);
+ double low = iLow(Symbol(), PERIOD_D1, 0);
+double mm = MathAbs(high - low);
+string mm2 = DoubleToStr(mm / Point, 2);
 
 //+------------------------------------------------------------------+
 //? Выводим коменты
 //+------------------------------------------------------------------+
-   Comment("totalPipsBuy: ", totalPipsBuy, " | totalPipsSell: ", totalPipsSell, " \r\ntotalLotsBuy: ", totalLotsBuy, " | totalLotsSell: ", totalLotsSell);
+   Comment("\r\n\r\n\r\ntotalPipsBuy: ", totalPipsBuy, " | totalPipsSell: ", totalPipsSell, " \r\ntotalLotsBuy: ", totalLotsBuy, " | totalLotsSell: ", totalLotsSell," \r\n\r\npointDifferenceNow: ", mm2, " \r\n\r\npointDifference: ", "\r\n",allPointLabels);
 
   }
 
@@ -186,50 +232,72 @@ void OnTick()
 //+------------------------------------------------------------------+
 //? Кнопка закрыть позиции
 //+------------------------------------------------------------------+
+// void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
+//   {
+//    if(id == CHARTEVENT_OBJECT_CLICK && sparam == "BuyButton") // Проверяем, что была нажата кнопка на графике
+//      {
+//       double current_priceB = MarketInfo(Symbol(), MODE_BID);
+//       double current_priceA = MarketInfo(Symbol(), MODE_ASK);
+//       for(int ci = OrdersTotal() - 1; ci >= 0; ci--)
+//         {
+//          if(OrderSelect(ci, SELECT_BY_POS, MODE_TRADES))
+//            {
+//             if(OrderSymbol() == _Symbol) // Убедитесь, что это сделка для текущего символа
+//               {
+//                if(OrderType() == OP_BUY)
+//                  {
+//                   bool closedA = OrderClose(OrderTicket(), OrderLots(), current_priceB, 10, clrForestGreen);
+//                   if(closedA)
+//                     {Print("Trade closed successfully!");}
+//                   else
+//                     {Print("Failed to close trade! Error code: ", GetLastError());}
+//                  }
+//                if(OrderType() == OP_SELL)
+//                  {
+//                   bool closedB = OrderClose(OrderTicket(), OrderLots(), current_priceA, 10, clrRed);
+//                   if(closedB)
+//                     {Print("Trade closed successfully!");}
+//                   else
+//                     {Print("Failed to close trade! Error code: ", GetLastError());}
+//                  }
+
+//               }
+//            }
+//         }
+//      }
+//   }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
   {
-   if(id == CHARTEVENT_OBJECT_CLICK && sparam == "BuyButton") // Проверяем, что была нажата кнопка на графике
+   if(id == CHARTEVENT_OBJECT_CLICK && sparam == "DelButton") // Проверяем, что была нажата кнопка на графике
      {
-      double current_priceB = MarketInfo(Symbol(), MODE_BID);
-      double current_priceA = MarketInfo(Symbol(), MODE_ASK);
-      for(int ci = OrdersTotal() - 1; ci >= 0; ci--)
+      for(int i3 = ObjectsTotal() - 1; i3 >= 0; i3--)
         {
-         if(OrderSelect(ci, SELECT_BY_POS, MODE_TRADES))
+         string objectName = ObjectName(i3);
+         if(StringFind(objectName, "MaxLine") != -1 || StringFind(objectName, "MinLine") != -1 || StringFind(objectName, "VerticalLine") != -1)
            {
-            if(OrderSymbol() == _Symbol) // Убедитесь, что это сделка для текущего символа
-              {
-               if(OrderType() == OP_BUY)
-                 {
-                  bool closedA = OrderClose(OrderTicket(), OrderLots(), current_priceB, 10, clrForestGreen);
-                  if(closedA)
-                    {Print("Trade closed successfully!");}
-                  else
-                    {Print("Failed to close trade! Error code: ", GetLastError());}
-                 }
-               if(OrderType() == OP_SELL)
-                 {
-                  bool closedB = OrderClose(OrderTicket(), OrderLots(), current_priceA, 10, clrRed);
-                  if(closedB)
-                    {Print("Trade closed successfully!");}
-                  else
-                    {Print("Failed to close trade! Error code: ", GetLastError());}
-                 }
-
-              }
+            ObjectDelete(0, objectName);
            }
         }
      }
   }
-
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int init()
   {
-   ObjectCreate("BuyButton", OBJ_BUTTON, 0, 0, 0); // Создаем кнопку "Купить"
-   ObjectSetString(0, "BuyButton", OBJPROP_TEXT, "Закрыть"); // Устанавливаем текст на кнопке
-   ObjectSetInteger(0, "BuyButton", OBJPROP_XDISTANCE, 200); // Устанавливаем отступ кнопки по оси X
-   ObjectSetInteger(0, "BuyButton", OBJPROP_YDISTANCE, 20); // Устанавливаем отступ кнопки по оси Y
+//  ObjectCreate("BuyButton", OBJ_BUTTON, 0, 0, 0); // Создаем кнопку "Купить"
+//  ObjectSetString(0, "BuyButton", OBJPROP_TEXT, "Закрыть"); // Устанавливаем текст на кнопке
+//  ObjectSetInteger(0, "BuyButton", OBJPROP_XDISTANCE, 200); // Устанавливаем отступ кнопки по оси X
+//  ObjectSetInteger(0, "BuyButton", OBJPROP_YDISTANCE, 20); // Устанавливаем отступ кнопки по оси Y
+
+   ObjectCreate("DelButton", OBJ_BUTTON, 0, 0, 0); // Создаем кнопку "Купить"
+   ObjectSetString(0, "DelButton", OBJPROP_TEXT, "Del"); // Устанавливаем текст на кнопке
+   ObjectSetInteger(0, "DelButton", OBJPROP_XDISTANCE, 200); // Устанавливаем отступ кнопки по оси X
+   ObjectSetInteger(0, "DelButton", OBJPROP_YDISTANCE, 20); // Устанавливаем отступ кнопки по оси Y
    return(0);
   }
 
