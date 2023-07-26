@@ -3,91 +3,258 @@
 //|                                      Copyright 2018, CompanyName |
 //|                                       http://www.companyname.net |
 //+------------------------------------------------------------------+
-datetime lastBarTime;
-bool sellStopOrderSent = false;
+double lotSize = 0.1;
+double MagicNumber;
+
+bool buyorderStop = false;
+bool sellorderStop = false;
+datetime prevTime = 0;
+
+datetime lastCandleTime;
+
+bool flag1 = false;
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 void OnTick()
   {
+datetime currentTime = TimeCurrent();
 
-double ema5 = iMA(_Symbol, PERIOD_CURRENT, 5, 0, MODE_EMA, PRICE_CLOSE, 0);
-double ema90 = iMA(_Symbol, PERIOD_CURRENT, 90, 0, MODE_EMA, PRICE_CLOSE, 0);
-double currentPrice = Bid;
+   double EMA5 = iMA(_Symbol, PERIOD_CURRENT, 5, 0, MODE_EMA, PRICE_CLOSE, 0);
+   double EMA90 = iMA(_Symbol, PERIOD_CURRENT, 90, 0, MODE_EMA, PRICE_CLOSE, 0);
 
-// Получаем время последнего бара
-   datetime currentBarTime = iTime(_Symbol, PERIOD_CURRENT, 0);
+// Получаем время текущей свечи
+   datetime currentCandleTime = iTime(_Symbol, PERIOD_CURRENT, 0);
 
+
+// Проверяем, произошло ли открытие нового бара
 
 
 // Получаем цены текущей свечи
-   double currentOpen = iOpen(_Symbol, PERIOD_CURRENT, 0);
-   double currentClose = iClose(_Symbol, PERIOD_CURRENT, 0);
-   double currentHigh = iHigh(_Symbol, PERIOD_CURRENT, 0);
-   double currentLow = iLow(_Symbol, PERIOD_CURRENT, 0);
-
-// Вычисляем размер бара
-   double barSize = MathAbs(currentHigh - currentLow);
+   double currentBarOpen = iOpen(_Symbol, PERIOD_CURRENT, 0);
+   double currentBarClose = iClose(_Symbol, PERIOD_CURRENT, 0);
+   double currentBarHigh = iHigh(_Symbol, PERIOD_CURRENT, 0);
+   double currentBarLow = iLow(_Symbol, PERIOD_CURRENT, 0);
 
 
 
+   double prev_1_BarOpen = iOpen(_Symbol, PERIOD_CURRENT, 1);
+   double prev_1_BarClose = iClose(_Symbol, PERIOD_CURRENT, 1);
+   double prev_1_BarHigh = iHigh(_Symbol, PERIOD_CURRENT, 1);
+   double prev_1_BarLow = iLow(_Symbol, PERIOD_CURRENT, 1);
+
+   double prev_2_BarOpen = iOpen(_Symbol, PERIOD_CURRENT, 2);
+   double prev_2_BarClose = iClose(_Symbol, PERIOD_CURRENT, 2);
+   double prev_2_BarHigh = iHigh(_Symbol, PERIOD_CURRENT, 2);
+   double prev_2_BarLow = iLow(_Symbol, PERIOD_CURRENT, 2);
+
+   double prev_3_BarOpen = iOpen(_Symbol, PERIOD_CURRENT, 3);
+   double prev_3_BarClose = iClose(_Symbol, PERIOD_CURRENT, 3);
+   double prev_3_BarHigh = iHigh(_Symbol, PERIOD_CURRENT, 3);
+   double prev_3_BarLow = iLow(_Symbol, PERIOD_CURRENT, 3);
 
 
-// Ваш код здесь
+   double bullBar = (prev_1_BarClose > prev_1_BarOpen);
+   double bullTP = MathAbs(prev_1_BarHigh - prev_1_BarLow);
+   double bearTP = MathAbs(prev_1_BarHigh - prev_1_BarLow);
+   double bearBar = (prev_1_BarClose < prev_1_BarOpen);
+
+   double h1 = MathAbs(prev_1_BarClose - prev_2_BarHigh);
+   double h2 = MathAbs(prev_1_BarClose - prev_2_BarLow);
+
+
+   int numberOfOrders = 1;
 
 
 
-
-
-
-
-
-// Проверяем, что размер бара не равен нулю
-   if(barSize != 0)
+   if(currentCandleTime != lastCandleTime && TimeCurrent() == currentCandleTime)
      {
 
-
-      // Вычисляем размер фетиля
-      double wickSize = MathAbs(currentHigh - currentClose);
-      if(wickSize < MathAbs(currentLow - currentClose))
+      if(bullBar && h1 > 20 * Point && prev_1_BarClose > prev_2_BarHigh && prev_1_BarClose > prev_3_BarHigh && !buyorderStop)
         {
-         wickSize = MathAbs(currentLow - currentClose);
-        }
-     
-            // Проверяем, что размер фетиля составляет не менее 80% от размера свечи
-            if(wickSize / barSize >= 0.8)
-              {
-               // Проверяем, что размер бара составляет не менее 10 пунктов
-               if(barSize >= 50 * _Point)
-                 {
-                  // Проверяем направление фетиля
-                  if(currentHigh - currentClose >= currentClose - currentLow)
-                    {
-                         // Проверяем, изменилось ли время последнего бара
-      if(currentBarTime != lastBarTime)
-        {
-         // Сохраняем время последнего бара
-         lastBarTime = currentBarTime;
 
-         // Получаем цены закрытия последнего бара
-         double lastClose = iClose(_Symbol, PERIOD_CURRENT, 1);
-
-         // Выполняем необходимые действия
-         if(lastClose > 0 && ema5 < ema90 && MathAbs(ema5 - ema90) > 150 * Point)
+         for(int t = 0; t < numberOfOrders; t++)
            {
-                     // Открываем продажу
-                     OrderSend(_Symbol, OP_SELL, 0.1, Bid, 5, Bid + 500 * Point, Bid - 100 * Point, "Pinbar Sell", 333);
-                    }
-                  else if(ema5 > ema90 && MathAbs(ema5 - ema90) < 150 * Point)
-                    {
-                     // Открываем покупку
-                     OrderSend(_Symbol, OP_BUY, 0.1, Ask, 5, Ask - 500 * Point, Ask + 100 * Point, "Pinbar Buy", 444);
-                    }
-                 }
+            bool result = OrderSend(_Symbol, OP_BUY, lotSize, Ask, 3, 0, 0, "EMA cross", 123, 0, Green);
+            buyorderStop = true;
+            if(result)
+              {
+               Print("Buy order ", MagicNumber, " opened successfully!");
+               
+
               }
-
+            else
+              {
+               Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());
+              }
            }
+        }
 
+      // if(bearBar && h2 > 20 * Point && prev_1_BarClose < prev_2_BarLow && prev_1_BarClose < prev_3_BarLow && !sellorderStop)
+      //   {
+
+      //    for(int t1 = 0; t1 < numberOfOrders; t1++)
+      //      {
+      //       bool result1 = OrderSend(_Symbol, OP_SELL, lotSize, Bid, 3, 0, Bid - bearTP, "EMA cross", 123, 0, Green);
+      //       if(result1)
+      //         {
+      //          Print("Buy order ", MagicNumber, " opened successfully!");
+      //          sellorderStop = true;
+
+      //         }
+      //       else
+      //         {
+      //          Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());
+      //         }
+      //      }
+      //   }
+     }
+    if (currentCandleTime != lastCandleTime)
+        {
+            // Сбрасываем флаг открытия ордера на новой свече
+            buyorderStop = false;
+        }
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//+------------------------------------------------------------------+
+//? Считаем прибыль или убыток
+//+------------------------------------------------------------------+
+   double totalPipsBuy = 0;
+   double totalPipsSell = 0;
+   for(int e = OrdersTotal() - 1; e >= 0; e--)
+     {
+      if(OrderSelect(e, SELECT_BY_POS, MODE_TRADES))
+        {
+         if(OrderType() == OP_BUY)
+           {
+            double profit = OrderProfit();
+            double symbolPoint = SymbolInfoDouble(OrderSymbol(), SYMBOL_TRADE_TICK_SIZE);
+            double pips = profit / symbolPoint;
+            totalPipsBuy += pips / 100000;
+           }
         }
      }
-  }
+for(int e1 = OrdersTotal() - 1; e1 >= 0; e1--)
+     {
+      if(OrderSelect(e1, SELECT_BY_POS, MODE_TRADES))
+        {
+         if(OrderType() == OP_SELL)
+           {
+            double profit1 = OrderProfit();
+            double symbolPoint1 = SymbolInfoDouble(OrderSymbol(), SYMBOL_TRADE_TICK_SIZE);
+            double pips1 = profit1 / symbolPoint1;
+            totalPipsSell += pips1 / 100000;
+           }
+        }
+     }
 //+------------------------------------------------------------------+
+//? Закрываем сделки и ордера при достижении прибыли в пунктах
+//+------------------------------------------------------------------+
+   double high = iHigh(Symbol(), PERIOD_CURRENT, 0);
+   double low = iLow(Symbol(), PERIOD_CURRENT, 0);
+   if(totalPipsSell >= 30)
+     {
+      double current_priceB = MarketInfo(Symbol(), MODE_BID);
+      double current_priceA = MarketInfo(Symbol(), MODE_ASK);
+      for(int ci = OrdersTotal() - 1; ci >= 0; ci--)
+        {
+         if(OrderSelect(ci, SELECT_BY_POS, MODE_TRADES))
+           {
+            if(OrderSymbol() == _Symbol) // Убедитесь, что это сделка для текущего символа
+              {
+               if(OrderType() == OP_SELL)
+                 {
+                  bool closedSell = OrderClose(OrderTicket(), OrderLots(), current_priceA, 10, clrRed);
+               
+           
+                
+                  if(closedSell)
+                    {Print("Trade Sell closed OK!");}
+                  else
+                    {Print("Failed to close trade! Error code: ", GetLastError());}
+                 }
 
+              }
+           }
+        }
+
+      for(int cl2 = OrdersTotal() - 1; cl2 >= 0; cl2--)
+        {
+         if(OrderSelect(cl2, SELECT_BY_POS, MODE_TRADES))
+           {
+            if(OrderType() == OP_SELLLIMIT)
+              {
+               bool closedAllOrder = OrderDelete(OrderTicket());
+               if(closedAllOrder)
+                 {Print("Order closed OK!");}
+               else
+                 {Print("Failed to close Order! Error code: ", GetLastError());}
+              }
+           }
+        }
+     }
+  if(totalPipsBuy >= 30)
+     {
+      double current_priceB1 = MarketInfo(Symbol(), MODE_BID);
+      double current_priceA1 = MarketInfo(Symbol(), MODE_ASK);
+      for(int ci1 = OrdersTotal() - 1; ci1 >= 0; ci1--)
+        {
+         if(OrderSelect(ci1, SELECT_BY_POS, MODE_TRADES))
+           {
+            if(OrderSymbol() == _Symbol) // Убедитесь, что это сделка для текущего символа
+              {
+               if(OrderType() == OP_BUY)
+                 {
+                  bool closedBuy1 = OrderClose(OrderTicket(), OrderLots(), current_priceB1, 10, clrRed);
+             
+            
+                  if(closedBuy1)
+                    {Print("Trade Buy closed OK!");}
+                  else
+                    {Print("Failed to close trade! Error code: ", GetLastError());}
+                 }
+
+
+              }
+           }
+        }
+
+for(int cl22 = OrdersTotal() - 1; cl22 >= 0; cl22--){if(OrderSelect(cl22, SELECT_BY_POS, MODE_TRADES)){if(OrderType() == OP_BUYLIMIT){bool closedAllOrder1 = OrderDelete(OrderTicket());if(closedAllOrder1){Print("Order closed OK!");}else{Print("Failed to close Order! Error code: ", GetLastError());}}}}}
+
+
+
+
+
+
+
+
+
+
+// Обновляем значение времени последней свечи
+    lastCandleTime = currentCandleTime;
+
+
+Comment("buyorderStop: ", buyorderStop);
+
+  }
 //+------------------------------------------------------------------+
