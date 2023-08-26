@@ -1,160 +1,123 @@
-//+------------------------------------------------------------------+
-//|                                                      ProjectName |
-//|                                      Copyright 2018, CompanyName |
-//|                                       http://www.companyname.net |
-//+------------------------------------------------------------------+
 int MagicNumber;
 double lotSize = 0.01;
+double bar1High, bar1Low;
+bool sellStopOrderSent = false, buyStopOrderSent = false, sellStopOrderSent2 = false, hasPosition;
 
-double bar1High;
-double bar1Low;
-
-bool sellStopOrderSent = false;
-bool buyStopOrderSent = false;
-bool sellStopOrderSent2 = false;
-bool hasPosition;
-
-//+------------------------------------------------------------------+
-//|         Button 1                                                         |
-//+------------------------------------------------------------------+
 void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
-  {
-   if(id == CHARTEVENT_OBJECT_CLICK && sparam == "BuyBtn")
-     {
-      bar1High = NormalizeDouble(iHigh(Symbol(), Period(), 1), 5);
-      bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
+{
+    if (id == CHARTEVENT_OBJECT_CLICK)
+    {
+        if (sparam == "BuyBtn")
+        {
+            bar1High = NormalizeDouble(iHigh(Symbol(), Period(), 1), 5);
+            bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
 
-      bool buyMarket1 = OrderSend(Symbol(), OP_BUY, 0.01, Ask, 3, bar1Low, 0, "OrderBuyMarket11", 11);
-      if(buyMarket1)
-        {Print("OrderBuy", MagicNumber, " opened successfully!");}
-      else
-        {Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());}
+            bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 3, bar1Low, 0, "OrderBuyMarket11", 11);
+            if (buyMarket1)
+            {
+                Print("OrderBuy ", MagicNumber, " opened successfully!");
+                sellStopOrderSent = false;
+                sellStopOrderSent2 = false;
+                buyStopOrderSent = false;
+            }
+            else
+            {
+                Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());
+            }
+        }
+        else if (sparam == "SellBtn")
+        {
+            bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
+            bool sell1 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, 0, 0, "my comment", 2221);
+            if (sell1)
+            {
+                Print("Sell order opened successfully!");
+            }
+            else
+            {
+                Print("Failed to open sell order! Error code: ", GetLastError());
+            }
+            sellStopOrderSent = false;
+            buyStopOrderSent = false;
+        }
+    }
+}
 
-    
-
-      sellStopOrderSent = false;
-      sellStopOrderSent2 = false;
-      buyStopOrderSent = false;
-     }
-  }
-//+------------------------------------------------------------------+
-//|           Button 2                                                       |
-//+------------------------------------------------------------------+
-//    if(id == CHARTEVENT_OBJECT_CLICK && sparam == "SellBtn") // Проверяем, что была нажата кнопка на графике
-//      {
-//       bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
-
-
-//       bool sell1 = OrderSend(Symbol(), OP_SELLSTOP, 0.01, bar1Low, 3, 0, 0, "my comment", 2221);
-//       if(sell1)
-//         {
-//          Print("Order ", MagicNumber, " opened successfully!");
-//         }
-//       else
-//         {
-//          Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());
-//         }
-//      }
-
-//    sellStopOrderSent = false;
-//    buyStopOrderSent = false;
-//   }
-
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
 void OnTick()
-  {
-
-// Проверяем, есть ли уже открытая позиция
+{
     int ordersTotal = OrdersTotal();
+    hasPosition = false;
+
     for (int i = 0; i < ordersTotal; i++)
     {
-        // Получаем информацию об открытом ордере
         if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
         {
-            // Проверяем, является ли ордер открытой позицией (не является ли он отложенным ордером)
             if (OrderType() == OP_BUY || OrderType() == OP_SELL)
             {
                 hasPosition = true;
                 break;
             }
-            else
-            {
-                hasPosition = false;
-            }
         }
     }
 
-
-    if(OrderType() == OP_BUY && OrderMagicNumber() == 11 && !sellStopOrderSent2)
+    if (OrderType() == OP_BUY && OrderMagicNumber() == 11 && !sellStopOrderSent2)
     {
+        bool sellStop1 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, bar1High + 4 * Point, 0, "SellStop22", 22);
+        if (sellStop1)
+        {
+            Print("Sell stop order opened successfully!");
+            sellStopOrderSent2 = true;
+        }
+        else
+        {
+            Print("Failed to open sell stop order! Error code: ", GetLastError());
+        }
+    }
 
-  
-  bool sellStop1 = OrderSend(Symbol(), OP_SELLSTOP, 0.01, bar1Low, 3, bar1High + 4 * Point, 0, "SellStop22", 22);
-      if(sellStop1)
-        {Print("Order ", MagicNumber, " opened successfully!"); sellStopOrderSent2 = true;}
-      else
-        {Print("Failed to open order ", MagicNumber, "! Error code: ", GetLastError());}
-          }
-//+------------------------------------------------------------------+
-//|                           OP_BUYSTOP                                       |
-//+------------------------------------------------------------------+
-   if(OrderType() == OP_SELL && OrderMagicNumber() == 22 && !buyStopOrderSent)
-     {
-      bool buyStop1 = OrderSend(Symbol(), OP_BUYSTOP, 0.01, bar1High + 4 * Point, 3, bar1Low, 0, "BuyStopOrder", 33); // Отправляем ордер на торговый сервер
+    if (OrderType() == OP_SELL && OrderMagicNumber() == 22 && !buyStopOrderSent)
+    {
+        bool buyStop1 = OrderSend(Symbol(), OP_BUYSTOP, lotSize, bar1High + 4 * Point, 3, bar1Low, 0, "BuyStopOrder", 33);
+        if (buyStop1)
+        {
+            Print("Buy stop order opened successfully!");
+            buyStopOrderSent = true;
+            sellStopOrderSent = false;
+        }
+        else
+        {
+            Print("Failed to open buy stop order! Error code: ", GetLastError());
+        }
+    }
 
-      if(buyStop1)
-        {Print("OrderBuy", MagicNumber, " opened successfully!"); buyStopOrderSent = true;  sellStopOrderSent = false;}
-      else
-        {Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());}
+    if (OrderType() == OP_BUY && OrderMagicNumber() == 33 && !sellStopOrderSent)
+    {
+        bool sellStop2 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, bar1High + 4 * Point, 0, "SellStopOrder", 22);
+        if (sellStop2)
+        {
+            Print("Sell stop order opened successfully!");
+            sellStopOrderSent = true;
+            buyStopOrderSent = false;
+        }
+        else
+        {
+            Print("Failed to open sell stop order! Error code: ", GetLastError());
+        }
+    }
 
-     }
+    Comment("Previous Candle High (Buy): ", bar1High, " Previous Candle Low (Buy): ", bar1Low);
+}
 
-//+------------------------------------------------------------------+
-//|                          OP_SELLSTOP                                        |
-//+------------------------------------------------------------------+
-   if(OrderType() == OP_BUY && OrderMagicNumber() == 33 && !sellStopOrderSent)
-     {
-
-      bool sellStop2 = OrderSend(Symbol(), OP_SELLSTOP, 0.01, bar1Low, 3, bar1High + 4 * Point, 0, "BuyStopOrder", 22); // Отправляем ордер на торговый сервер
-
-      if(sellStop2)
-        {Print("OrderBuy", MagicNumber, " opened successfully!"); sellStopOrderSent = true;   buyStopOrderSent = false;}
-      else
-        {Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());}
-
-
-     }
-
-//+------------------------------------------------------------------+
-//|                         Comment                                         |
-//+------------------------------------------------------------------+
-
-   Comment("Previous Candle High (Buy): ",  bar1High, " Previous Candle Low (Buy): ", bar1Low);
-
-  }
-
-
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
 int init()
-  {
+{
+    ObjectCreate("BuyBtn", OBJ_BUTTON, 0, 0, 0);
+    ObjectSetString(0, "BuyBtn", OBJPROP_TEXT, "buy");
+    ObjectSetInteger(0, "BuyBtn", OBJPROP_XDISTANCE, 200);
+    ObjectSetInteger(0, "BuyBtn", OBJPROP_YDISTANCE, 20);
 
-   ObjectCreate("BuyBtn", OBJ_BUTTON, 0, 0, 0); // Создаем кнопку "Купить"
-   ObjectSetString(0, "BuyBtn", OBJPROP_TEXT, "buy"); // Устанавливаем текст на кнопке
-   ObjectSetInteger(0, "BuyBtn", OBJPROP_XDISTANCE, 200); // Устанавливаем отступ кнопки по оси X
-   ObjectSetInteger(0, "BuyBtn", OBJPROP_YDISTANCE, 20); // Устанавливаем отступ кнопки по оси Y
+    ObjectCreate("SellBtn", OBJ_BUTTON, 0, 0, 0);
+    ObjectSetString(0, "SellBtn", OBJPROP_TEXT, "sell");
+    ObjectSetInteger(0, "SellBtn", OBJPROP_XDISTANCE, 250);
+    ObjectSetInteger(0, "SellBtn", OBJPROP_YDISTANCE, 20);
 
-   ObjectCreate("SellBtn", OBJ_BUTTON, 0, 0, 0); // Создаем кнопку "Купить"
-   ObjectSetString(0, "SellBtn", OBJPROP_TEXT, "sell"); // Устанавливаем текст на кнопке
-   ObjectSetInteger(0, "SellBtn", OBJPROP_XDISTANCE, 250); // Устанавливаем отступ кнопки по оси X
-   ObjectSetInteger(0, "SellBtn", OBJPROP_YDISTANCE, 20); // Устанавливаем отступ кнопки по оси Y
-   return(0);
-  }
-//+------------------------------------------------------------------+
+    return (INIT_SUCCEEDED);
+}
