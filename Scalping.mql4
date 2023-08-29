@@ -1,14 +1,15 @@
+input int MagicNumber1;
+input int MagicNumber2;
 int MagicNumber;
 double lotSize = 0.01;
-double bar1High, bar1Low, tpbuy;
-bool sellStopOrderSent = false, buyStopOrderSent = false,hasPosition;
-double b1;
-double b2;
-double b3;
-double b4;
-double b5;
+ bool sellStopOrderSent = false, buyStopOrderSent = false,hasPosition;
+  double bar1High, bar1Low, tpbuy;
+
 void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
 {
+  
+   
+     double b1, b2, b3, b4, b5;
    if(id == CHARTEVENT_OBJECT_CLICK && sparam == "BuyBtn")
    {
             bar1High = NormalizeDouble(iHigh(Symbol(), Period(), 1), 5);
@@ -23,7 +24,7 @@ b5 = 12 + (b3 * 2) / Point;
             // bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 3, bar1Low, NormalizeDouble(bar1Low + 3 * (Ask - bar1Low), 5), "comment", 11);
 
             
-            bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 0, bar1Low, Ask + b4 * Point, "comment", 11);
+            bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 0, bar1Low, Ask + b4 * Point, "comment", MagicNumber1);
 
 
 
@@ -49,7 +50,7 @@ b3 = bar1High - Bid;
 b4 = 12 + (b3 * 3) / Point;
 b5 = 12 + (b3 * 2) / Point;
             // bool sell1 = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 3, bar1High, 0, "comment", 22);
-            bool sell1 = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 0, bar1High + 4 * Point, Bid - b4 * Point,"comment", 22);
+            bool sell1 = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 0, bar1High + 4 * Point, Bid - b4 * Point,"comment", MagicNumber2);
 
             if (sell1)
             {
@@ -80,9 +81,9 @@ void OnTick()
         }
     }
 
-    if (OrderType() == OP_BUY && OrderMagicNumber() == 11 && !sellStopOrderSent)
+    if (OrderType() == OP_BUY && OrderMagicNumber() == MagicNumber1 && !sellStopOrderSent)
     {
-        bool sellStop1 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, bar1High + 4 * Point, Bid - b5 * Point, "comment", 22);
+        bool sellStop1 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, bar1High + 4 * Point, 0, "comment", MagicNumber2);
         if (sellStop1)
         {
             sellStopOrderSent = true;
@@ -92,9 +93,9 @@ void OnTick()
         {}
     }
 
-    if (OrderType() == OP_SELL && OrderMagicNumber() == 22 && !buyStopOrderSent)
+    if (OrderType() == OP_SELL && OrderMagicNumber() == MagicNumber2 && !buyStopOrderSent)
     {
-        bool buyStop1 = OrderSend(Symbol(), OP_BUYSTOP, lotSize, bar1High + 4 * Point, 3, bar1Low, Ask + b5 * Point, "comment", 11);
+        bool buyStop1 = OrderSend(Symbol(), OP_BUYSTOP, lotSize, bar1High + 4 * Point, 3, bar1Low, 0, "comment", MagicNumber1);
         if (buyStop1)
         {
             buyStopOrderSent = true;
@@ -104,7 +105,7 @@ void OnTick()
         {}
     }
 
-    Comment("Previous Candle High (Buy): ", b1, " Previous Candle Low (Buy): ", b2, " Previous Candle Low (Buy): ", b3 ,": ", b4);
+    // Comment("Previous Candle High (Buy): ", b1, " Previous Candle Low (Buy): ", b2, " Previous Candle Low (Buy): ", b3 ,": ", b4);
 }
 
 int init()
