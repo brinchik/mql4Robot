@@ -1,16 +1,31 @@
 int MagicNumber;
 double lotSize = 0.01;
-double bar1High, bar1Low;
+double bar1High, bar1Low, tpbuy;
 bool sellStopOrderSent = false, buyStopOrderSent = false,hasPosition;
-
+double b1;
+double b2;
+double b3;
+double b4;
 void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
 {
    if(id == CHARTEVENT_OBJECT_CLICK && sparam == "BuyBtn")
    {
             bar1High = NormalizeDouble(iHigh(Symbol(), Period(), 1), 5);
             bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
-  
-            bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 0, bar1Low, NormalizeDouble(bar1Low + 4 * (Ask - bar1Low), 5), "comment", 11);
+
+b1 = Ask;
+b2 = bar1Low;
+b3 = Ask - bar1Low;
+b4 = 12 + (b3 * 3) / Point;
+            // bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 3, bar1Low, 0, "comment", 11);
+            // bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 3, bar1Low, NormalizeDouble(bar1Low + 3 * (Ask - bar1Low), 5), "comment", 11);
+
+            
+            bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 0, bar1Low, Ask + b4 * Point, "comment", 11);
+
+
+
+
 
             if (buyMarket1)
             {
@@ -26,7 +41,12 @@ void OnChartEvent(const int id, const long &lparam, const double &dparam, const 
             bar1High = NormalizeDouble(iHigh(Symbol(), Period(), 1), 5);
             bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
 
-            bool sell1 = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 0, bar1High + 4 * Point, NormalizeDouble(bar1High - 4 * (bar1High - Bid), 5), "comment", 22);
+            b1 = Bid;
+b2 = bar1High;
+b3 = bar1High - Bid;
+b4 = 12 + (b3 * 3) / Point;
+            // bool sell1 = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 3, bar1High, 0, "comment", 22);
+            bool sell1 = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 0, bar1High + 4 * Point, Bid - b4 * Point,"comment", 22);
 
             if (sell1)
             {
