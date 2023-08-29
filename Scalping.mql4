@@ -6,6 +6,7 @@ double b1;
 double b2;
 double b3;
 double b4;
+double b5;
 void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
 {
    if(id == CHARTEVENT_OBJECT_CLICK && sparam == "BuyBtn")
@@ -17,6 +18,7 @@ b1 = Ask;
 b2 = bar1Low;
 b3 = Ask - bar1Low;
 b4 = 12 + (b3 * 3) / Point;
+b5 = 12 + (b3 * 2) / Point;
             // bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 3, bar1Low, 0, "comment", 11);
             // bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 3, bar1Low, NormalizeDouble(bar1Low + 3 * (Ask - bar1Low), 5), "comment", 11);
 
@@ -45,6 +47,7 @@ b4 = 12 + (b3 * 3) / Point;
 b2 = bar1High;
 b3 = bar1High - Bid;
 b4 = 12 + (b3 * 3) / Point;
+b5 = 12 + (b3 * 2) / Point;
             // bool sell1 = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 3, bar1High, 0, "comment", 22);
             bool sell1 = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 0, bar1High + 4 * Point, Bid - b4 * Point,"comment", 22);
 
@@ -79,7 +82,7 @@ void OnTick()
 
     if (OrderType() == OP_BUY && OrderMagicNumber() == 11 && !sellStopOrderSent)
     {
-        bool sellStop1 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, bar1High + 4 * Point, 0, "comment", 22);
+        bool sellStop1 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, bar1High + 4 * Point, Bid - b5 * Point, "comment", 22);
         if (sellStop1)
         {
             sellStopOrderSent = true;
@@ -91,7 +94,7 @@ void OnTick()
 
     if (OrderType() == OP_SELL && OrderMagicNumber() == 22 && !buyStopOrderSent)
     {
-        bool buyStop1 = OrderSend(Symbol(), OP_BUYSTOP, lotSize, bar1High + 4 * Point, 3, bar1Low, 0, "comment", 11);
+        bool buyStop1 = OrderSend(Symbol(), OP_BUYSTOP, lotSize, bar1High + 4 * Point, 3, bar1Low, Ask + b5 * Point, "comment", 11);
         if (buyStop1)
         {
             buyStopOrderSent = true;
