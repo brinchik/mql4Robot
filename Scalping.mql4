@@ -1,51 +1,48 @@
 int MagicNumber;
 double lotSize = 0.01;
 double bar1High, bar1Low;
-bool sellStopOrderSent = false, buyStopOrderSent = false, sellStopOrderSent2 = false, hasPosition;
+bool sellStopOrderSent = false, buyStopOrderSent = false,hasPosition;
 
 void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
 {
-    if (id == CHARTEVENT_OBJECT_CLICK)
-    {
-        if (sparam == "BuyBtn")
+   if(id == CHARTEVENT_OBJECT_CLICK && sparam == "BuyBtn")
+   {
+            bar1High = NormalizeDouble(iHigh(Symbol(), Period(), 1), 5);
+            bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
+  
+            bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 0, bar1Low, NormalizeDouble(bar1Low + 4 * (Ask - bar1Low), 5), "comment", 11);
+
+            if (buyMarket1)
+            {
+                sellStopOrderSent = false;
+                buyStopOrderSent = false;
+            }
+            else
+            {}
+         
+        }
+        if(id == CHARTEVENT_OBJECT_CLICK && sparam == "SellBtn")
         {
             bar1High = NormalizeDouble(iHigh(Symbol(), Period(), 1), 5);
             bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
 
-            bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 3, bar1Low, 0, "comment", 11);
-            if (buyMarket1)
+            bool sell1 = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 0, bar1High + 4 * Point, NormalizeDouble(bar1High - 4 * (bar1High - Bid), 5), "comment", 22);
+
+            if (sell1)
             {
-                Print("OrderBuy ", MagicNumber, " opened successfully!");
                 sellStopOrderSent = false;
-                sellStopOrderSent2 = false;
                 buyStopOrderSent = false;
             }
             else
-            {
-                Print("Failed to open buy order ", MagicNumber, "! Error code: ", GetLastError());
-            }
-        }
-        else if (sparam == "SellBtn")
-        {
-            bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
-            bool sell1 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, 0, 0, "comment", 2221);
-            if (sell1)
-            {
-                Print("Sell order opened successfully!");
-            }
-            else
-            {
-                Print("Failed to open sell order! Error code: ", GetLastError());
-            }
-            sellStopOrderSent = false;
-            buyStopOrderSent = false;
+            {}
+          
         }
     }
-}
+
 
 void OnTick()
 {
-    int ordersTotal = OrdersTotal();
+   int ordersTotal = OrdersTotal();
     hasPosition = false;
 
     for (int i = 0; i < ordersTotal; i++)
@@ -60,51 +57,31 @@ void OnTick()
         }
     }
 
-    if (OrderType() == OP_BUY && OrderMagicNumber() == 11 && !sellStopOrderSent2)
+    if (OrderType() == OP_BUY && OrderMagicNumber() == 11 && !sellStopOrderSent)
     {
         bool sellStop1 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, bar1High + 4 * Point, 0, "comment", 22);
         if (sellStop1)
         {
-            Print("Sell stop order opened successfully!");
-            sellStopOrderSent2 = true;
-        }
-        else
-        {
-            Print("Failed to open sell stop order! Error code: ", GetLastError());
-        }
-    }
-
-    if (OrderType() == OP_SELL && OrderMagicNumber() == 22 && !buyStopOrderSent)
-    {
-        bool buyStop1 = OrderSend(Symbol(), OP_BUYSTOP, lotSize, bar1High + 4 * Point, 3, bar1Low, 0, "comment", 33);
-        if (buyStop1)
-        {
-            Print("Buy stop order opened successfully!");
-            buyStopOrderSent = true;
-            sellStopOrderSent = false;
-        }
-        else
-        {
-            Print("Failed to open buy stop order! Error code: ", GetLastError());
-        }
-    }
-
-    if (OrderType() == OP_BUY && OrderMagicNumber() == 33 && !sellStopOrderSent)
-    {
-        bool sellStop2 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, bar1High + 4 * Point, 0, "comment", 22);
-        if (sellStop2)
-        {
-            Print("Sell stop order opened successfully!");
             sellStopOrderSent = true;
             buyStopOrderSent = false;
         }
         else
-        {
-            Print("Failed to open sell stop order! Error code: ", GetLastError());
-        }
+        {}
     }
 
-    // Comment("Previous Candle High (Buy): ", bar1High, " Previous Candle Low (Buy): ", bar1Low);
+    if (OrderType() == OP_SELL && OrderMagicNumber() == 22 && !buyStopOrderSent)
+    {
+        bool buyStop1 = OrderSend(Symbol(), OP_BUYSTOP, lotSize, bar1High + 4 * Point, 3, bar1Low, 0, "comment", 11);
+        if (buyStop1)
+        {
+            buyStopOrderSent = true;
+            sellStopOrderSent = false;
+        }
+        else
+        {}
+    }
+
+    Comment("Previous Candle High (Buy): ", b1, " Previous Candle Low (Buy): ", b2, " Previous Candle Low (Buy): ", b3 ,": ", b4);
 }
 
 int init()
@@ -117,7 +94,7 @@ int init()
     ObjectCreate("SellBtn", OBJ_BUTTON, 0, 0, 0);
     ObjectSetString(0, "SellBtn", OBJPROP_TEXT, "sell");
     ObjectSetInteger(0, "SellBtn", OBJPROP_XDISTANCE, 250);
-    ObjectSetInteger(0, "SellBtn", OBJPROP_YDISTANCE, 20);
+    ObjectSetInteger(0, "SellBtn", OBJPROP_YDISTANCE, 50);
 
     return (INIT_SUCCEEDED);
 }
