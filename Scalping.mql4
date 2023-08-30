@@ -1,124 +1,169 @@
+//+------------------------------------------------------------------+
+//|                                                      ProjectName |
+//|                                      Copyright 2018, CompanyName |
+//|                                       http://www.companyname.net |
+//+------------------------------------------------------------------+
 input int MagicNumber1;
 input int MagicNumber2;
 int MagicNumber;
 double lotSize = 0.01;
- bool sellStopOrderSent = false, buyStopOrderSent = false,hasPosition;
-  double bar1High, bar1Low, tpbuy;
+bool sellStopOrderSent = false, buyStopOrderSent = false,hasPosition;
+double bar1High, bar1Low;
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
-{
-  
-   
-     double b1, b2, b3, b4, b5;
+  {
+
+   double b1, b2, b3, b4, b5;
    if(id == CHARTEVENT_OBJECT_CLICK && sparam == "BuyBtn")
-   {
-            bar1High = NormalizeDouble(iHigh(Symbol(), Period(), 1), 5);
-            bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
+     {
+      bar1High = NormalizeDouble(iHigh(Symbol(), Period(), 1), 5);
+      bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
 
-b1 = Ask;
-b2 = bar1Low;
-b3 = Ask - bar1Low;
-b4 = 12 + (b3 * 3) / Point;
-b5 = 12 + (b3 * 2) / Point;
-            // bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 3, bar1Low, 0, "comment", 11);
-            // bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 3, bar1Low, NormalizeDouble(bar1Low + 3 * (Ask - bar1Low), 5), "comment", 11);
+      b1 = Ask;
+      b2 = bar1Low;
+      b3 = Ask - bar1Low;
+      b4 = 12 + (b3 * 3) / Point;
+      b5 = 12 + (b3 * 2) / Point;
 
-            
-            bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 0, bar1Low, Ask + b4 * Point, "comment", MagicNumber1);
-
-
-
-
-
-            if (buyMarket1)
-            {
-                sellStopOrderSent = false;
-                buyStopOrderSent = false;
-            }
-            else
-            {}
-         
-        }
-        if(id == CHARTEVENT_OBJECT_CLICK && sparam == "SellBtn")
+      bool buyMarket1 = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 0, bar1Low, Ask + b4 * Point, "comment", 111);
+      if(buyMarket1)
         {
-            bar1High = NormalizeDouble(iHigh(Symbol(), Period(), 1), 5);
-            bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
-
-            b1 = Bid;
-b2 = bar1High;
-b3 = bar1High - Bid;
-b4 = 12 + (b3 * 3) / Point;
-b5 = 12 + (b3 * 2) / Point;
-            // bool sell1 = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 3, bar1High, 0, "comment", 22);
-            bool sell1 = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 0, bar1High + 4 * Point, Bid - b4 * Point,"comment", MagicNumber2);
-
-            if (sell1)
-            {
-                sellStopOrderSent = false;
-                buyStopOrderSent = false;
-            }
-            else
-            {}
-          
+         sellStopOrderSent = false;
+         buyStopOrderSent = false;
         }
-    }
+      else
+        {}
+      bool market1 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, bar1High + 4 * Point, 0, "comment", 222);
+     }
 
 
+   if(id == CHARTEVENT_OBJECT_CLICK && sparam == "SellBtn")
+     {
+      bar1High = NormalizeDouble(iHigh(Symbol(), Period(), 1), 5);
+      bar1Low = NormalizeDouble(iLow(Symbol(), Period(), 1), 5);
+
+      b1 = Bid;
+      b2 = bar1High;
+      b3 = bar1High - Bid;
+      b4 = 12 + (b3 * 3) / Point;
+      b5 = 12 + (b3 * 2) / Point;
+
+      bool sell1 = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 0, bar1High + 4 * Point, Bid - b4 * Point,"comment", 333);
+      if(sell1)
+        {
+         sellStopOrderSent = false;
+         buyStopOrderSent = false;
+        }
+      else
+        {}
+      bool market2 = OrderSend(Symbol(), OP_BUYSTOP, lotSize, bar1High + 4 * Point, 3, bar1Low, 0, "comment", 444);
+
+     }
+  }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 void OnTick()
-{
+  {
    int ordersTotal = OrdersTotal();
-    hasPosition = false;
+   hasPosition = false;
 
-    for (int i = 0; i < ordersTotal; i++)
-    {
-        if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+   for(int i = 0; i < ordersTotal; i++)
+     {
+      if(OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
         {
-            if (OrderType() == OP_BUY || OrderType() == OP_SELL)
-            {
-                hasPosition = true;
-                break;
-            }
+         if(OrderType() == OP_BUY || OrderType() == OP_SELL)
+           {
+            hasPosition = true;
+            break;
+           }
         }
-    }
+     }
 
-    if (OrderType() == OP_BUY && OrderMagicNumber() == MagicNumber1 && !sellStopOrderSent)
-    {
-        bool sellStop1 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, bar1High + 4 * Point, 0, "comment", MagicNumber2);
-        if (sellStop1)
+   if(OrderType() == OP_BUY && OrderMagicNumber() == 555)
+     {
+      if(!sellStopOrderSent)
         {
+           {
+            bool sellStop1 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, bar1High + 4 * Point, 0, "comment", 222);
             sellStopOrderSent = true;
             buyStopOrderSent = false;
+            if(sellStop1)
+              {}
+            else
+              {}
+           }
         }
-        else
-        {}
-    }
-
-    if (OrderType() == OP_SELL && OrderMagicNumber() == MagicNumber2 && !buyStopOrderSent)
-    {
-        bool buyStop1 = OrderSend(Symbol(), OP_BUYSTOP, lotSize, bar1High + 4 * Point, 3, bar1Low, 0, "comment", MagicNumber1);
-        if (buyStop1)
+     }
+   if(OrderType() == OP_SELL && OrderMagicNumber() == 222)
+     {
+      if(!buyStopOrderSent)
         {
-            buyStopOrderSent = true;
-            sellStopOrderSent = false;
+         bool buyStop1 = OrderSend(Symbol(), OP_BUYSTOP, lotSize, bar1High + 4 * Point, 3, bar1Low, 0, "comment", 555);
+         buyStopOrderSent = true;
+         sellStopOrderSent = false;
+         if(buyStop1)
+           {}
+         else
+           {}
         }
-        else
-        {}
-    }
+     }
 
-    // Comment("Previous Candle High (Buy): ", b1, " Previous Candle Low (Buy): ", b2, " Previous Candle Low (Buy): ", b3 ,": ", b4);
-}
 
+
+
+
+
+
+   if(OrderType() == OP_BUY && OrderMagicNumber() == 444)
+     {
+      if(!sellStopOrderSent)
+        {
+         bool sellStop11 = OrderSend(Symbol(), OP_SELLSTOP, lotSize, bar1Low, 3, bar1High + 4 * Point, 0, "comment", 666);
+         sellStopOrderSent = true;
+         buyStopOrderSent = false;
+         if(sellStop11)
+           {}
+         else
+           {}
+        }
+     }
+   if(OrderType() == OP_SELL && OrderMagicNumber() == 666)
+     {
+      if(!buyStopOrderSent)
+        {
+         bool buyStop11 = OrderSend(Symbol(), OP_BUYSTOP, lotSize, bar1High + 4 * Point, 3, bar1Low, 0, "comment", 444);
+         buyStopOrderSent = true;
+         sellStopOrderSent = false;
+         if(buyStop11)
+           {}
+         else
+           {}
+        }
+     }
+// Comment("Previous Candle High (Buy): ", b1, " Previous Candle Low (Buy): ", b2, " Previous Candle Low (Buy): ", b3 ,": ", b4);
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 int init()
-{
-    ObjectCreate("BuyBtn", OBJ_BUTTON, 0, 0, 0);
-    ObjectSetString(0, "BuyBtn", OBJPROP_TEXT, "buy");
-    ObjectSetInteger(0, "BuyBtn", OBJPROP_XDISTANCE, 200);
-    ObjectSetInteger(0, "BuyBtn", OBJPROP_YDISTANCE, 20);
+  {
+   ObjectCreate("BuyBtn", OBJ_BUTTON, 0, 0, 0);
+   ObjectSetString(0, "BuyBtn", OBJPROP_TEXT, "buy");
+   ObjectSetInteger(0, "BuyBtn", OBJPROP_XDISTANCE, 200);
+   ObjectSetInteger(0, "BuyBtn", OBJPROP_YDISTANCE, 20);
 
-    ObjectCreate("SellBtn", OBJ_BUTTON, 0, 0, 0);
-    ObjectSetString(0, "SellBtn", OBJPROP_TEXT, "sell");
-    ObjectSetInteger(0, "SellBtn", OBJPROP_XDISTANCE, 250);
-    ObjectSetInteger(0, "SellBtn", OBJPROP_YDISTANCE, 50);
+   ObjectCreate("SellBtn", OBJ_BUTTON, 0, 0, 0);
+   ObjectSetString(0, "SellBtn", OBJPROP_TEXT, "sell");
+   ObjectSetInteger(0, "SellBtn", OBJPROP_XDISTANCE, 250);
+   ObjectSetInteger(0, "SellBtn", OBJPROP_YDISTANCE, 50);
 
-    return (INIT_SUCCEEDED);
-}
+   return (INIT_SUCCEEDED);
+  }
+//+------------------------------------------------------------------+
